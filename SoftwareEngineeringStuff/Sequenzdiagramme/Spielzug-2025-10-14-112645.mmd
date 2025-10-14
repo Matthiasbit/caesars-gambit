@@ -1,0 +1,28 @@
+sequenceDiagram
+  participant Game
+  participant Spieler
+  participant Spieler2
+
+Game -->> Spieler: nextMove()
+Spieler -->> Spieler: Truppenverteilung neuer Truppen im Client
+Spieler -->> Spieler: Truppenverschiebung oder Angriff oder keine Aktion
+alt wenn Angriff
+Spieler -->> Game: angriff(Teritorium)
+Game -->> Spieler2: has(Teritorium) return bool
+Game -->> Game: dice()
+
+Game -->> Spieler2: showResult(troupesLost, Teritorium) return troupesLeft
+alt wenn troupesLeft = 0
+Game -->> Spieler: newTeritorium(Teritorium)
+end
+Game -->> Spieler: showResult(troupesLost, Teritorium) 
+Spieler -->> Game: kann neue Aktion starten
+
+else wenn Truppenverschiebung
+Spieler -->> Spieler: moveTroupes(amount, T1, T2)
+
+else keine Aktion
+Spieler -->> Game: endMove()
+Game -->> Game: nextMove()
+end
+

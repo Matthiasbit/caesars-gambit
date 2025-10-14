@@ -1,0 +1,24 @@
+sequenceDiagram
+  participant Client1
+  participant ClientX
+  participant Room
+  participant Game
+alt create room
+Client1 -->> Room: create return roomId
+Client1 -->> Client1: (lädt andere Spieler ein)
+Client1 -->> Room: join(Client)
+else join room (also other players X mind 3x max. 5x)
+ClientX -->> Room: join(Client)
+end
+
+Client1 -->> Room: startGame()
+Room -->> Game: start()
+
+Game -->> Room: done()
+Room -->> Game: start() // ggf. für neues Spiel in gleichem Room
+
+
+
+
+
+
