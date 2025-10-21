@@ -43,7 +43,7 @@ Dieses Dokument beschreibt:
 - die zugehörigen Sequenzdiagramme,
 - die abgeleiteten funktionalen und nicht-funktionalen Anforderungen.
 
-#### 2. Flow of Events — Design
+## 2. Flow of Events — Design
 Die **Nutzerverwaltung** besteht aus drei Hauptfunktionen:
 
 1. **Registrierung:** Erstellen eines neuen Benutzerkontos.  
@@ -60,28 +60,78 @@ Alle Passwörter werden ausschließlich **gehasht** gespeichert, und Tokens sich
 ### 2.2 Sequenzdiagramm – Nutzerverwaltung
 Liegt momentan noch im Folder: Sequenzdiagramme
 
+### 2.3 Primary Interactions  
 
- Komponente | Verantwortung |
+| Komponente | Verantwortung |
 |-------------|----------------|
 | **Client (Frontend)** | Darstellung der Benutzeroberfläche für Registrierung, Login und Profilbearbeitung; sendet REST-Anfragen an das Backend. |
 | **Backend (Spring Boot)** | Übernimmt Authentifizierung, Passwort-Hashing, SessionToken-Erzeugung (JWT) und Fehlerbehandlung. |
-| **Datenbank (PostgreSQL)** | Persistente Speicherung der Benutzerdaten (E-Mail, Benutzername, Passwort-Hash). |
+| **Database (PostgreSQL)** | Persistente Speicherung der Benutzerdaten (E-Mail, Benutzername, Passwort-Hash). |
 
+### 2.4 Flow Description
 
-  - [Short narrative summarizing the realization strategy]
-- Primary interactions (sequence/communication)
-  - [List the main collaborating objects and their responsibilities]
-- Diagrams referenced
-  - Sequence diagrams:
-    - [Filename or link — brief description of purpose]
-  - Collaboration/communication diagrams:
-    - [Filename or link — brief description of purpose]
-  - Activity diagrams:
-    - [Filename or link — brief description of purpose]
-- Mapping between flows and design artifacts
-  - [Explain how each step/use-case flow maps to objects, operations, and interactions]
-- Alternate and exception flows
-  - [Describe how alternate flows are realized and how exceptions are handled in the design]
+#### Registration
+1. Der Benutzer gibt E-Mail, Nutzernamen und Passwort ein.  
+2. Der Client sendet `register(email, nutzername, hashedPW)` an das Backend.  
+3. Das Backend legt einen neuen Benutzereintrag in der Datenbank an.  
+4. Nach erfolgreicher Speicherung wird ein **SessionToken (JWT)** erstellt und an den Client gesendet.  
 
-#### 3. Derived Requirements
-[A textual description that collects all requirements, such as non-functional requirements, on the use-case realizations not considered in the design model, but that need to be taken care of during implementation.]
+#### Login
+1. Der Client sendet `login(email, hashedPW)` an das Backend.  
+2. Das Backend ruft den gespeicherten Passwort-Hash aus der Datenbank ab.  
+3. Die Eingabe wird geprüft; bei Übereinstimmung wird ein **SessionToken** erzeugt.  
+4. Der Client erhält das Token oder eine Fehlermeldung (z. B. bei ungültigen Daten).  
+
+#### Edit Profile
+1. Der Client sendet `editUser(sessionToken, email, nutzername, hashedPW)` an das Backend.  
+2. Das Backend überprüft den Token auf Gültigkeit.  
+3. Bei gültigem Token werden die geänderten Daten in der Datenbank aktualisiert.  
+4. Das Backend bestätigt die erfolgreiche Aktualisierung.
+
+### 2.5 Alternate and Exception Flows  
+
+| Szenario | Behandlung |
+|-----------|------------|
+| **E-Mail bereits vorhanden (bei Registrierung)** | Backend gibt HTTP 409 (Conflict) zurück; UI zeigt Fehlermeldung. |
+| **Falsches Passwort (bei Login)** | Backend gibt HTTP 401 (Unauthorized) zurück. |
+| **Ungültiger oder abgelaufener Token (bei Profiländerung)** | Backend verweigert Zugriff und fordert den Benutzer zum erneuten Login auf. |
+| **Ungültige Eingabe (Frontend)** | Eingaben werden vor dem Absenden validiert; Benutzer erhält direkte Rückmeldung. |
+
+## 3. Derived Requirements(planned state of 21.10.25)
+
+### 3.1 Functional Requirements  
+- Registrierung neuer Benutzer mit Validierung und Passwort-Hashing.  
+- Authentifizierung bestehender Benutzer über E-Mail und Passwort.  
+- Ausgabe eines SessionTokens (JWT) für sichere Sitzungen.  
+- Möglichkeit zur Bearbeitung und Speicherung von Profildaten.  
+- REST-API-Kommunikation zwischen Client und Server.  
+
+### 3.2 Non-Functional Requirements  
+
+| Kategorie | Anforderung |
+|------------|--------------|
+| **Security** | Passwörter werden ausschließlich gehasht gespeichert; Kommunikation erfolgt ausschließlich über HTTPS. |
+| **Reliability** | Systemverfügbarkeit 99,9 %; Wiederherstellungszeit (MTTR) < 1 h. |
+| **Performance** | Maximale Antwortzeit 500 ms pro Anfrage. |
+| **Usability** | Intuitive UI mit klaren Fehlermeldungen und Eingabevalidierung. |
+| **Maintainability** | Saubere Code-Struktur nach MVC-Prinzip; modulare Schichtenarchitektur. |
+| **Extensibility** | Möglichkeit zur späteren Integration von OAuth2/Social-Login. |
+
+### 3.3 Mapping to Design Artifacts  
+
+| Artefakt | Beschreibung |
+|-----------|--------------|
+| **UserController** | Stellt REST-Endpunkte `/register`, `/login`, `/user/edit` bereit. |
+| **UserService** | Implementiert Logik für Registrierung, Login, Tokenverwaltung. |
+| **UserRepository** | Schnittstelle zur PostgreSQL-Datenbank (CRUD-Operationen). |
+| **SessionToken (JWT)** | Dient zur sicheren Authentifizierung und Autorisierung. |
+
+### 3.4 Legal and Licensing Requirements  
+- Es dürfen ausschließlich Bibliotheken mit **MIT**- oder **Apache 2.0**-Lizenz verwendet werden.  
+- Verarbeitung personenbezogener Daten erfolgt gemäß **DSGVO** (Datenschutz-Grundverordnung).  
+
+## 4. Summary  
+Der Use Case **„Nutzerverwaltung“** bildet die Grundlage für Authentifizierung und Benutzermanagement im Spiel *Caesar’s Gambit*.  
+Durch sichere Passwortspeicherung, Token-basierte Sitzungen und strikte Trennung der Systemschichten wird eine robuste, wartbare und skalierbare Benutzerverwaltung gewährleistet.  
+Sie stellt sicher, dass nur verifizierte Spieler Zugriff auf Spielräume, Spielzüge und persönliche Profile erhalten.
+
