@@ -1,0 +1,37 @@
+sequenceDiagram
+  participant Client
+  participant Backend
+  participant Datenbank
+
+activate Client
+alt Registrieren
+activate Backend
+Client ->> Backend: register(email, nutzername, hashedPW) 
+activate Datenbank
+Backend <<->> Datenbank: insert email, nutzername, hashedPW
+deactivate Datenbank
+Backend ->> Client: return sessionToken
+deactivate Backend
+end
+
+alt Login
+activate Backend
+Client ->> Backend: login(email , hashedPW) 
+activate Datenbank
+Backend <<->> Datenbank: find email read hashedPW
+deactivate Datenbank
+Backend ->> Backend: validate pw
+Backend ->> Client: return sessionToken || error
+deactivate Backend
+end
+
+alt Userverwaltung
+activate Backend
+Client ->> Backend: editUser(sessionToken, email, nutzername, hashedPW)
+activate Datenbank
+Backend <<->> Datenbank: find email insert when changed email hashedPW nutzername
+deactivate Datenbank
+deactivate Backend
+end
+deactivate Client
+
