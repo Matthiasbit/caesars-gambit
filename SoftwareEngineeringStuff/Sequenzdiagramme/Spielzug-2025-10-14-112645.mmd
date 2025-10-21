@@ -3,6 +3,10 @@ sequenceDiagram
   participant Spieler
   participant Spieler2
 
+activate Game
+activate Spieler
+activate Spieler2
+
 Game -->> Spieler: nextMove()
 Spieler -->> Spieler: Truppenverteilung neuer Truppen im Client
 Spieler -->> Spieler: Truppenverschiebung oder Angriff oder keine Aktion
@@ -26,3 +30,6 @@ Spieler -->> Game: endMove()
 Game -->> Game: nextMove()
 end
 
+deactivate Game
+deactivate Spieler
+deactivate Spieler2
