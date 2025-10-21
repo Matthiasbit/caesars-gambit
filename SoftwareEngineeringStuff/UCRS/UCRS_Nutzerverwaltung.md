@@ -58,7 +58,9 @@ Der Ablauf erfolgt nach dem **Client-Server-Modell**:
 Alle Passwörter werden ausschließlich **gehasht** gespeichert, und Tokens sichern jede Sitzung gegen unbefugten Zugriff ab.
 
 ### 2.2 Sequenzdiagramm – Nutzerverwaltung
-Liegt momentan noch im Folder: Sequenzdiagramme
+
+![Sequenzdiagramm Nutzerverwaltung](https://github.com/Matthiasbit/caesars-gambit/blob/main/SoftwareEngineeringStuff/Sequenzdiagramme/Nutzerverwaltung-2025-10-21-083204.mmd.png?raw=true)
+
 
 ### 2.3 Primary Interactions  
 
