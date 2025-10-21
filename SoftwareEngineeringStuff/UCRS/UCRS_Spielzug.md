@@ -21,7 +21,6 @@ Er beinhaltet Interaktionen zwischen **Frontend (Client, React + TS)**, **Backen
 | UCRS | Use-Case Realization Specification |
 | UI | User Interface |
 | DB | Datenbank |
-| REST | Representational State Transfer |
 | TS | TypeScript |
 | HTTPS | Hypertext Transfer Protocol Secure |
 | JWT | JSON Web Token |
@@ -61,7 +60,7 @@ Dieses Dokument beschreibt:
 
 | Komponente | Verantwortung |
 |-------------|----------------|
-| **Client (Frontend)** | Darstellung des Spielfeldes, Erfassung der Spielaktionen, Kommunikation mit dem Backend per REST. |
+| **Client (Frontend)** | Darstellung des Spielfeldes, Erfassung der Spielaktionen, Kommunikation mit dem Backend per HTTPS. |
 | **Backend (Spring Boot)** | Berechnung, Regelprüfung, Würfelergebnisse, GameState-Updates und Synchronisation der Spielzüge. |
 | **Datenbank (PostgreSQL)** | Speicherung des Spielzustands inklusive Truppenanzahl, Besitz und Zughistorie. |
 
@@ -72,7 +71,7 @@ Dieses Dokument beschreibt:
 1. Der Client zeigt verfügbare Truppen zur Verteilung an.  
 2. Der Spieler verteilt Truppen über das UI.  
 3. Der Spieler entscheidet sich für eine Aktion: Angriff, Truppenverschiebung oder Zug beenden.  
-4. Bei Angriff wird eine REST-Anfrage mit Zielterritorium an das Backend gesendet. Backend prüft Besitz, führt Würfelwurf aus und aktualisiert State.  
+4. Bei Angriff wird eine HTTPS-Anfrage mit Zielterritorium an das Backend gesendet. Backend prüft Besitz, führt Würfelwurf aus und aktualisiert State.  
 5. Bei Truppenverschiebung sendet der Client die Einheitenbewegung an das Backend zur Validierung und Speicherung.  
 6. Bei Zugende wird der nächste Spieler aktiviert und informiert.
 
@@ -88,12 +87,12 @@ Dieses Dokument beschreibt:
 
 | Use-Case Aktion | Entsprechende Implementierung | Beschreibung |
 |-----------------|-------------------------------|---------------|
-| nextMove() | REST `/move/start` | Start des Zuges eines Spielers |
-| angriff() | REST `/attack` | Berechnet Würfelergebnisse und prüft Besitzverhältnisse |
+| nextMove() | HTTPS `/move/start` | Start des Zuges eines Spielers |
+| angriff() | HTTPS `/attack` | Berechnet Würfelergebnisse und prüft Besitzverhältnisse |
 | dice() | Backend `DiceService.roll()` | Simuliert Würfelergebnisse |
 | showResult() | Frontend `BattleResultModal` | Zeigt Ergebnisse und Verluste |
-| moveTroupes() | REST `/move` | Bewegt Einheiten zwischen Territorien |
-| endMove() | REST `/move/end` | Schließt den Spielzug ab |
+| moveTroupes() | HTTPS `/move` | Bewegt Einheiten zwischen Territorien |
+| endMove() | HTTPS `/move/end` | Schließt den Spielzug ab |
 | nextMove() | Backend `GameService.nextPlayer()` | Nächster Spieler beginnt Zug |
 
 ---
