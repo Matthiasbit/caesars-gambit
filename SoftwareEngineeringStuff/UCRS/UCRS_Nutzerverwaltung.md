@@ -64,7 +64,7 @@ Liegt momentan noch im Folder: Sequenzdiagramme
 
 | Komponente | Verantwortung |
 |-------------|----------------|
-| **Client (Frontend)** | Darstellung der Benutzeroberfläche für Registrierung, Login und Profilbearbeitung; sendet REST-Anfragen an das Backend. |
+| **Client (Frontend)** | Darstellung der Benutzeroberfläche für Registrierung, Login und Profilbearbeitung; sendet HTTPS-Anfragen an das Backend. |
 | **Backend (Spring Boot)** | Übernimmt Authentifizierung, Passwort-Hashing, SessionToken-Erzeugung (JWT) und Fehlerbehandlung. |
 | **Database (PostgreSQL)** | Persistente Speicherung der Benutzerdaten (E-Mail, Benutzername, Passwort-Hash). |
 
@@ -104,7 +104,7 @@ Liegt momentan noch im Folder: Sequenzdiagramme
 - Authentifizierung bestehender Benutzer über E-Mail und Passwort.  
 - Ausgabe eines SessionTokens (JWT) für sichere Sitzungen.  
 - Möglichkeit zur Bearbeitung und Speicherung von Profildaten.  
-- REST-API-Kommunikation zwischen Client und Server.  
+- HTTPS-API-Kommunikation zwischen Client und Server.  
 
 ### 3.2 Non-Functional Requirements  
 
