@@ -167,7 +167,7 @@ public enum Territorries {
         connect(KRAILDUNE, SIZILLEBT_ERGANSEKUR);
         connect(LATERANO, PALATIN);
         connect(LATERANO,TOSCANA_UND_UNBURIA);
-        connect(LAURIA, MARSKEM);
+        connect(LAURIA, MONTEGRO);
         connect(LAURIA, TENUBRA);
         connect(LISITONE, MARSKEM);
         connect(LISITONE, MONTEGRO);
