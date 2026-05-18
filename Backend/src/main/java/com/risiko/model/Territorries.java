@@ -90,7 +90,6 @@ public enum Territorries {
         b.neighbors.add(a);
     }
 
-    // Auto-generated from Karte-neutral.svg (threshold 22px, edge-sampled)
     static {
         connect(AGUALAINE, AUGUSTA_NEMETERS);
         connect(AGUALAINE, FARNOVIA);
@@ -100,11 +99,11 @@ public enum Territorries {
         connect(ALABRE_KUSTE, HARI);
         connect(ALABRE_KUSTE, KRAILDUNE);
         connect(ALABRE_KUSTE, SIZILLEBT_ERGANSEKUR);
-        connect(ALABRE_KUSTE, TENUBRA);
         connect(ALABRE_KUSTE, TUKU);
         connect(APENINII_TAL, PORRUGIERT);
-        connect(APENINII_TAL, SIZI_KUESTE);
+        connect(APENINII_TAL, SANDMEER);
         connect(APENINII_TAL, VARENSIA);
+        connect(APENINII_TAL, SILBER_BUCHT);
         connect(APILION, FELSDUENE);
         connect(APILION, HARI);
         connect(APILION, MENDRIA);
@@ -114,7 +113,7 @@ public enum Territorries {
         connect(APPULLEN, LISITONE);
         connect(APPULLEN, MENDRIA);
         connect(APPULLEN, PERGUGIA);
-        connect(APPULLEN, TENUBRA);
+        connect(APPULLEN, EICHENWALD);
         connect(AQUITANE, AUGUSTA_NEMETERS);
         connect(AQUITANE, MAURENIET);
         connect(AUGUSTA_NEMETERS, FARNOVIA);
@@ -122,6 +121,7 @@ public enum Territorries {
         connect(AUGUSTA_NEMETERS, MAURENIET);
         connect(CAMPANIA_A_LAPPE, EICHENWALD);
         connect(CAMPANIA_A_LAPPE, FORUM_TRASTEVEVEE);
+        connect(CAMPANIA_A_LAPPE, FORUM_VATLKANSTADT);
         connect(DUENENSEE, JONISCHE_UFER);
         connect(DUENENSEE, NEAPEL);
         connect(DUENENSEE, PONRALMA);
@@ -129,14 +129,12 @@ public enum Territorries {
         connect(EICHENWALD, NEAPEL);
         connect(EICHENWALD, PONRALMA);
         connect(ERALDIS, MENDRIA);
-        connect(ERALDIS, TENUBRA);
         connect(ERALDIS, TUKU);
         connect(FARNOVIA, FOROUZA);
         connect(FARNOVIA, LISITONE);
         connect(FARNOVIA, MATTRA);
         connect(FARNOVIA, PERGUGIA);
         connect(FELSDUENE, HARI);
-        connect(FELSDUENE, PALERNO);
         connect(FELSDUENE, SANDMEER);
         connect(FELSDUENE_2, MOLASSNO);
         connect(FELSDUENE_2, PALEMO);
@@ -168,6 +166,7 @@ public enum Territorries {
         connect(KRAILDUNE, MAL_GOLF_TARENT);
         connect(KRAILDUNE, SIZILLEBT_ERGANSEKUR);
         connect(LATERANO, PALATIN);
+        connect(LATERANO,TOSCANA_UND_UNBURIA);
         connect(LAURIA, MARSKEM);
         connect(LAURIA, TENUBRA);
         connect(LISITONE, MARSKEM);
@@ -189,6 +188,7 @@ public enum Territorries {
         connect(MENDRIA, PERGUGIA);
         connect(MENDRIA, TUKU);
         connect(MESSNO_ERKANSI, MONTE_SKARNO);
+        connect(MESSNO_ERKANSI, PATATRA);
         connect(MOLASSNO, PALEMO);
         connect(MOLASSNO, SZULIONEN);
         connect(MOLASSNO, TREVOIA);
@@ -197,6 +197,7 @@ public enum Territorries {
         connect(MONTEGRO, TUSKULUM);
         connect(NEAPEL, PONRALMA);
         connect(NEAPEL, RENIAKUSTE);
+        connect(NEAPEL, PORRUGIERT);
         connect(PALEMO, SANDMEER);
         connect(PALEMO, SIZI_KUESTE);
         connect(PALEMO, SZULIONEN);
@@ -212,6 +213,7 @@ public enum Territorries {
         connect(SANDFELSEN, TOSCANA_UND_UNBURIA);
         connect(SANDFELSEN, VARENSIA);
         connect(SANDMEER, SIZI_KUESTE);
+        connect(DUENENSEE, SIZI_KUESTE);
         connect(SANDMEER, SZULIONEN);
         connect(SILBER_BUCHT, VARENSIA);
         connect(SZULIONEN, TREVOIA);
