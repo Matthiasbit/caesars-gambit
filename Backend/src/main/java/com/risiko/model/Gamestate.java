@@ -73,7 +73,13 @@ public class Gamestate {
 
     public int calculateReinforcements(Player player) {
         int territoryCount = player.getTerritories().size();
-        return Math.max(3, territoryCount / 3); // TODO hier Kontinentbonus einpflegen
+        int continentBonus = 0;
+        for (Continent continent : Continent.values()) {
+            if (continent.isControlledBy(player)) {
+                continentBonus += continent.getBonusTroops();
+            }
+        }
+        return Math.max(3, territoryCount / 3) + continentBonus;
     }
 
     public void endMove() {
@@ -133,7 +139,18 @@ public class Gamestate {
                     currentPlayer.distTroops(fromTerritory, -lostTroopsAttack);
                     List<SseEmitter> emitters = new ArrayList<>();
                     emitters.add(currentPlayer.emitter);
-                    gameController.broadcastEvent(emitters, "winTerritory", toTerritory + " " +  currentPlayer.username);
+                    gameController.broadcastEvent(emitters, "winTerritory", toTerritory + " " + currentPlayer.username);
+                    // Check if a continent was just completed
+                    List<SseEmitter> allEmitters = players.stream()
+                            .map(pl -> pl.emitter)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                    for (Continent continent : Continent.values()) {
+                        if (continent.getTerritories().contains(toTerritory) && continent.isControlledBy(currentPlayer)) {
+                            gameController.broadcastEvent(allEmitters, "continentConquered",
+                                    continent.name() + " " + currentPlayer.username);
+                        }
+                    }
                 } else {
                     p.getTerritories().put(toTerritory, p.getTerritories().get(toTerritory) - lostTroopsDefence);
                     currentPlayer.getTerritories().put(fromTerritory,
