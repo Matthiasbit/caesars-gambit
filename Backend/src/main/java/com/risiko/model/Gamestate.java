@@ -140,7 +140,6 @@ public class Gamestate {
                     List<SseEmitter> emitters = new ArrayList<>();
                     emitters.add(currentPlayer.emitter);
                     gameController.broadcastEvent(emitters, "winTerritory", toTerritory + " " + currentPlayer.username);
-                    // Check if a continent was just completed
                     List<SseEmitter> allEmitters = players.stream()
                             .map(pl -> pl.emitter)
                             .filter(Objects::nonNull)
