@@ -1,16 +1,20 @@
-export async function moveTroops(sum: number, from: string, to: string, roomId: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/game/move`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ from, to, sum, roomId }),
-    });
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
 
-    if (!response.ok) {
-        throw new Error('Failed to move troops');
-    }
+export type MoveTroopsPayload = {
+  sum: number;
+  from: string;
+  to: string;
+  roomId: string;
+};
 
-    return;
+export async function moveTroops({ sum, from, to, roomId }: MoveTroopsPayload) {
+  return postJson<void>("/api/game/move", { from, to, sum, roomId });
+}
+
+export function useMoveTroops(options?: UseMutationOptions<void, Error, MoveTroopsPayload>) {
+  return useMutation({
+    mutationFn: moveTroops,
+    ...options,
+  });
 }

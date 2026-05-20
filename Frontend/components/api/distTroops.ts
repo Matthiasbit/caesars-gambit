@@ -1,16 +1,19 @@
-export async function distTroops(sum: number, to: string, roomId: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/game/distTroops`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ to, sum, roomId }),
-    });
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
 
-    if (!response.ok) {
-        throw new Error('Failed to distribute troops');
-    }
+export type DistTroopsPayload = {
+  sum: number;
+  to: string;
+  roomId: string;
+};
 
-    return;
+export async function distTroops({ sum, to, roomId }: DistTroopsPayload) {
+  return postJson<void>("/api/game/distTroops", { to, sum, roomId });
+}
+
+export function useDistTroops(options?: UseMutationOptions<void, Error, DistTroopsPayload>) {
+  return useMutation({
+    mutationFn: distTroops,
+    ...options,
+  });
 }

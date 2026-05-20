@@ -1,15 +1,13 @@
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
+
 export async function leaveRoom(id: number) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/rooms/leave/${id}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
+  return postJson<void>(`/api/rooms/leave/${id}`);
+}
 
-    if (!response.ok) {
-        throw new Error('Failed to leave room');
-    }
-
-    return;
+export function useLeaveRoom(options?: UseMutationOptions<void, Error, number>) {
+  return useMutation({
+    mutationFn: (id: number) => leaveRoom(id),
+    ...options,
+  });
 }

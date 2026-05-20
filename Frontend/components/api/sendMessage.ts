@@ -1,16 +1,18 @@
-export async function sendMessage(id: number, message: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/rooms/message/${id}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-    });
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
 
-    if (!response.ok) {
-        throw new Error('Failed to send message');
-    }
+export type SendMessagePayload = {
+  id: number;
+  message: string;
+};
 
-    return;
+export async function sendMessage({ id, message }: SendMessagePayload) {
+  return postJson<void>(`/api/rooms/message/${id}`, { message });
+}
+
+export function useSendMessage(options?: UseMutationOptions<void, Error, SendMessagePayload>) {
+  return useMutation({
+    mutationFn: sendMessage,
+    ...options,
+  });
 }

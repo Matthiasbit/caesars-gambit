@@ -1,6 +1,6 @@
 import GameCard from './GameCard'
 import { Chat } from '../ui/chat'
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { DistributionDialog } from './DistributionDialog'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 import { distTroops } from '../api/distTroops'
@@ -8,12 +8,12 @@ import { useGetCurrentUser } from '../api/getCurrentUser'
 import { moveTroops } from '../api/moveTroops'
 import { attack } from '../api/attack'
 import { endTurn } from '../api/endTurn'
+import router from 'next/router'
+import { useGameStream } from '../hooks/useGameStream'
 
 type GamePageProps = {
     roomId: string
     gameStateJson: string | null
-    setPendingDistCount: React.Dispatch<React.SetStateAction<number | null>>
-    pendingDistCount: number | null
     playerNames: string[]
     chatMessages: { username: string; message: string }[]
 }
@@ -24,7 +24,7 @@ type TerritoryData = {
     troops: number
 }
 
-export default function GamePage({ roomId, gameStateJson, pendingDistCount, playerNames, chatMessages, setPendingDistCount }: GamePageProps) {
+export default function GamePage({ roomId }: GamePageProps) {
     const [regionClicked, setRegionClicked] = useState<string | null>(null)
     const [dialogTerritory, setDialogTerritory] = useState<string | null>(null);
     const [territories, setTerritories] = useState<TerritoryData[]>([])
@@ -35,7 +35,30 @@ export default function GamePage({ roomId, gameStateJson, pendingDistCount, play
     const [attackDialog, setAttackDialog] = useState(false)
     const ownerColorMap = useOwnerColorMap(territories)
     const currentUser = useGetCurrentUser()
-    const currentUsername = currentUser.status === "authenticated" ? currentUser.user.username : null
+    const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+
+    const {
+        playerNames,
+        chatMessages,
+        gameStarted,
+        gameStateJson,
+        setGameStarted: setStreamGameStarted,
+        pendingDistCount,
+        setPendingDistCount,
+      } = useGameStream(
+        roomId,
+        currentUsername,
+        () => alert("Du bist am Zug! Verteile deine Truppen."),
+        () => {
+          router.push(`/room/${roomId}?started=true`);
+        }
+      );
+
+    useEffect(() => {
+        if (currentUser.isSuccess && currentUser.data) {
+            setCurrentUsername(currentUser.data.username);
+        }
+    }, [currentUser]);
 
     useEffect(() => {
         if (!gameStateJson) return
@@ -74,7 +97,7 @@ export default function GamePage({ roomId, gameStateJson, pendingDistCount, play
     async function handleDialogConfirm(num: number) {
         if (pendingDistCount == null || !dialogTerritory) return
 
-        await distTroops(num, dialogTerritory, roomId!);
+        await distTroops({sum: num, to: dialogTerritory, roomId});
 
         setPendingDistCount((prev: number | null) => {
             const remaining = prev !== null ? prev - num : null
@@ -86,13 +109,13 @@ export default function GamePage({ roomId, gameStateJson, pendingDistCount, play
 
     async function handleMoveConfirm(num: number) {
         setMoveDialog(false)
-        await moveTroops(num, moveFrom!, moveTo!, roomId!);
+        await moveTroops({sum: num, from: moveFrom!, to: moveTo!, roomId});
     }
 
     async function handleAttackConfirm(num: number) {
         setAttackDialog(false)
-        await attack(num, moveFrom!, moveTo!, roomId!);
-        
+        await attack({sum: num, from: moveFrom!, to: moveTo!, roomId});
+
     }
 
 
@@ -139,56 +162,71 @@ export default function GamePage({ roomId, gameStateJson, pendingDistCount, play
     }
 
     return (
-        <div style={{ background: '#07142a', height: "100vh", display: "flex", color: "white", width: "100%" }}>
-            <div
-                className={`gap-6 rounded-32`}
-                style={{ display: 'flex', flexDirection: 'row', width: '100%', height: 'fit-content', padding: '24px', borderRadius: '12px', boxSizing: 'border-box', alignItems: 'center', background: "rgba(255,255,255,0.02)", border: "1px solid rgba(59,130,246,0.08)", margin: "16px" }}
-            >
-                <div className="flex-1 flex flex-col gap-6 min-w-96" style={{ height: 'fit-content', display: 'flex', flexDirection: 'column' }}>
-
-                    <div className="space-y-2 flex-shrink-0">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Spieler</h2>
-                        {playerNames.map((name, index) => (
-                            <div key={index} className="flex items-center gap-3 p-2 rounded-md border border-[rgba(59,130,246,0.1)] hover:border-[rgba(59,130,246,0.3)] transition-colors">
-                                <div
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white font-semibold flex-shrink-0"
-                                    style={{ backgroundColor: getColorForOwner(name, ownerColorMap) }}
-                                >
-                                    {name.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="text-sm font-medium truncate">{name}</div>
+        <>
+            {pendingDistCount != null && (
+                <div style={{ position: 'fixed', right: 16, top: 16, zIndex: 2000 }}>
+                    <div className="rounded bg-[#0b1220] border border-[rgba(59,130,246,0.25)] px-4 py-3 text-white shadow">
+                        <div className="flex items-center gap-3">
+                            <div>
+                                <strong>{pendingDistCount}</strong> Truppen verteilen — klicke auf ein Gebiet, das du besitzt.
                             </div>
-                        )
-                        )}
-                    </div>
-                    <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Chat</h2>
-                        <div className="bg-white border rounded-md p-3 shadow-sm flex-grow flex flex-col overflow-hidden w-full">
-                            <Chat msg={chatMessages} roomId={roomId} />
+                            <div>
+                                <button className="ml-2 px-2 py-1 bg-red-600 rounded" onClick={() => setPendingDistCount(null)}>Abbrechen</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            )}
+            <div style={{ background: '#07142a', height: "100vh", display: "flex", color: "white", width: "100%" }}>
+                <div
+                    className={`gap-6 rounded-32`}
+                    style={{ display: 'flex', flexDirection: 'row', width: '100%', height: 'fit-content', padding: '24px', borderRadius: '12px', boxSizing: 'border-box', alignItems: 'center', background: "rgba(255,255,255,0.02)", border: "1px solid rgba(59,130,246,0.08)", margin: "16px" }}
+                >
+                    <div className="flex-1 flex flex-col gap-6 min-w-96" style={{ height: 'fit-content', display: 'flex', flexDirection: 'column' }}>
 
-                <div className="flex-grow flex flex-col">
-                    <div className="relative rounded-xl border border-[rgba(59,130,246,0.25)] bg-black/30 overflow-hidden shadow-md w-full" style={{}}>
-                        <GameCard
-                            onRegionClick={handleRegionClick}
-                            gameStateJson={gameStateJson}
-                        />
-                        <button onClick={() => handleEndTurn()}>EndTurn</button>
+                        <div className="space-y-2 flex-shrink-0">
+                            <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Spieler</h2>
+                            {playerNames.map((name, index) => (
+                                <div key={index} className="flex items-center gap-3 p-2 rounded-md border border-[rgba(59,130,246,0.1)] hover:border-[rgba(59,130,246,0.3)] transition-colors">
+                                    <div
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white font-semibold flex-shrink-0"
+                                        style={{ backgroundColor: getColorForOwner(name, ownerColorMap) }}
+                                    >
+                                        {name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="text-sm font-medium truncate">{name}</div>
+                                </div>
+                            )
+                            )}
+                        </div>
+                        <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+                            <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Chat</h2>
+                            <div className="bg-white border rounded-md p-3 shadow-sm flex-grow flex flex-col overflow-hidden w-full">
+                                <Chat msg={chatMessages} roomId={roomId} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-grow flex flex-col">
+                        <div className="relative rounded-xl border border-[rgba(59,130,246,0.25)] bg-black/30 overflow-hidden shadow-md w-full" style={{}}>
+                            <GameCard
+                                onRegionClick={handleRegionClick}
+                                gameStateJson={gameStateJson}
+                            />
+                            <button onClick={() => handleEndTurn()}>EndTurn</button>
+                        </div>
                     </div>
                 </div>
+                <DistributionDialog
+                    isOpen={dialogTerritory != null || moveDialog || attackDialog}
+                    territoryName={moveDialog ? "Truppen hierhin verschieben " + moveTo : attackDialog ? "Truppen angreifen " + moveTo : dialogTerritory || ""}
+                    availableTroops={(moveDialog || attackDialog) ? moveTroopsCount || 0 : pendingDistCount || 0}
+                    onConfirm={moveDialog ? handleMoveConfirm : attackDialog ? handleAttackConfirm : handleDialogConfirm}
+                    onCancel={() => { setDialogTerritory(null); setMoveDialog(false); setAttackDialog(false) }}
+                    moveDialog={moveDialog}
+                    attackDialog={attackDialog}
+                />
             </div>
-            <DistributionDialog
-                isOpen={dialogTerritory != null || moveDialog || attackDialog}
-                territoryName={moveDialog ?  "Truppen hierhin verschieben " + moveTo  : attackDialog ? "Truppen angreifen " + moveTo : dialogTerritory || ""}
-                availableTroops={(moveDialog || attackDialog) ? moveTroopsCount || 0 : pendingDistCount || 0}
-                onConfirm={moveDialog ? handleMoveConfirm : attackDialog ? handleAttackConfirm : handleDialogConfirm}
-                onCancel={() => {setDialogTerritory(null); setMoveDialog(false); setAttackDialog(false)} }
-                moveDialog={moveDialog}
-                attackDialog={attackDialog}
-            />
-        </div>
-
+        </>
     )
 }

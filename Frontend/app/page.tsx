@@ -42,9 +42,6 @@ export default function Home() {
     return null;
   }
 
-  const loading = currentUser.status === "loading";
-  const isAuthenticated = currentUser.status === "authenticated";
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -54,7 +51,7 @@ export default function Home() {
     }
   };
 
-  if (loading) {
+  if (currentUser.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="flex items-center">
@@ -114,7 +111,7 @@ export default function Home() {
       </nav>
 
       <main className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
-        {isAuthenticated ? (
+        {currentUser.isSuccess && currentUser.data ? (
           <>
             <section className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-2 text-sm text-blue-100 backdrop-blur-sm">
@@ -122,7 +119,7 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 <h2 className="text-5xl font-bold leading-tight md:text-6xl">
-                  Willkommen, <span className="text-blue-400">{currentUser.user.username}</span>! 🎮
+                  Willkommen, <span className="text-blue-400">{currentUser.data.username}</span>! 🎮
                 </h2>
                 <p className="max-w-xl text-xl text-slate-300">
                   Erstelle eine Lobby, tritt einer Partie bei oder passe dein Profil an.
@@ -258,29 +255,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* Info Section - Only show when not logged in */}
-      {!isAuthenticated && (
-        <div className="bg-slate-800/50 border-y border-slate-700/30 py-16 mt-20 relative z-10">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-blue-400">2-6</div>
-                <p className="text-slate-300">Spieler pro Partie</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-blue-400">~30min</div>
-                <p className="text-slate-300">Durchschnittliche Spieldauer</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-blue-400">Online</div>
-                <p className="text-slate-300">Multiplayer Echtzeit</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
       <footer className="border-t border-slate-700/30 py-8 mt-20 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">

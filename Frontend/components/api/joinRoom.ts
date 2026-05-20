@@ -1,16 +1,13 @@
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
+
 export async function joinRoom(id: number, host: boolean = false) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/rooms/join/${id}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ host }),
-    });
+  return postJson<void>(`/api/rooms/join/${id}`, { host });
+}
 
-    if (!response.ok) {
-        throw new Error('Failed to join room');
-    }
-
-    return;
+export function useJoinRoom(options?: UseMutationOptions<void, Error, { id: number; host?: boolean }>) {
+  return useMutation({
+    mutationFn: ({ id, host = false }) => joinRoom(id, host),
+    ...options,
+  });
 }

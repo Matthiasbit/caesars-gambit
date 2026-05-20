@@ -1,17 +1,13 @@
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
+
 export async function createRoom() {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/rooms/create`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    });
+  return postJson<number>("/api/rooms/create");
+}
 
-    if (!response.ok) {
-        throw new Error('Failed to create room');
-    }
-
-    const data = await response.json();
-    console.log('Room created:', data);
-    return data;
+export function useCreateRoom(options?: UseMutationOptions<number, Error, void>) {
+  return useMutation({
+    mutationFn: createRoom,
+    ...options,
+  });
 }
