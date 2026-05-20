@@ -5,20 +5,14 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-/**
- * Continents of the game map with their territories and bonus troops.
- * Bonus troop values can be adjusted via the BONUS_TROOPS field of each constant.
- */
 public enum Continent {
 
-    // NW island-like region (blue border)
     BLAUE_KUESTE(2,
             Territorries.PALATIN,
             Territorries.LATERANO,
             Territorries.FORUM_TRASTEVEVEE,
             Territorries.CAMPANIA_A_LAPPE),
 
-    // Centre-left region (dark-red border)
     ANTIKENHERZ(5,
             Territorries.TOSCANA_UND_UNBURIA,
             Territorries.FLORENZZ,
@@ -33,7 +27,6 @@ public enum Continent {
             Territorries.HORTHITAL,
             Territorries.FOROUZA),
 
-    // Western coast (small green border)
     WESTKUESTE(3,
             Territorries.EICHENWALD,
             Territorries.PONRALMA,
@@ -44,7 +37,6 @@ public enum Continent {
             Territorries.JONISCHE_UFER,
             Territorries.STRUMICIACHE_UFER),
 
-    // North-east region (large green border)
     NORDOSTEN(7,
             Territorries.AQUITANE,
             Territorries.MAURENIET,
@@ -62,7 +54,6 @@ public enum Continent {
             Territorries.ERALDIS,
             Territorries.MENDRIA),
 
-    // South-centre region (cyan border)
     SUEDMITTE(5,
             Territorries.SILBER_BUCHT,
             Territorries.APILION,
@@ -80,7 +71,6 @@ public enum Continent {
             Territorries.TREVOIA,
             Territorries.PATATRA),
 
-    // South-east region (purple border)
     SUEDOSTEN(3,
             Territorries.ALABRE_KUSTE,
             Territorries.SIZILLEBT_ERGANSEKUR,
@@ -89,7 +79,6 @@ public enum Continent {
             Territorries.MESSNO_ERKANSI,
             Territorries.MONTE_SKARNO);
 
-    /** Bonus troops awarded for controlling this entire continent. Adjust as needed. */
     private final int bonusTroops;
     private final Set<Territorries> territories;
 
