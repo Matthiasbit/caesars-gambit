@@ -1,5 +1,8 @@
 package com.risiko.services;
 
+import com.risiko.exception.ConflictException;
+import com.risiko.exception.NotFoundException;
+import com.risiko.exception.UnauthorizedException;
 import com.risiko.model.User;
 import com.risiko.repository.UserRepository;
 import com.risiko.security.JwtUtil;
@@ -27,8 +30,8 @@ public class AuthService {
 
     @Transactional
     public String register(String username, String email, String password) {
-        if (userRepository.existsByEmail(email)) throw new RuntimeException("Email exists");
-        if (userRepository.existsByUsername(username)) throw new RuntimeException("Username exists");
+        if (userRepository.existsByEmail(email)) throw new ConflictException("Email exists");
+        if (userRepository.existsByUsername(username)) throw new ConflictException("Username exists");
         User u = new User();
         u.setUsername(username);
         u.setEmail(email);
@@ -38,8 +41,8 @@ public class AuthService {
     }
 
     public String login(String email, String password) {
-        User u = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid credentials"));
-        if (!passwordEncoder.matches(password, u.getPassword())) throw new RuntimeException("Invalid credentials");
+        User u = userRepository.findByEmail(email).orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
+        if (!passwordEncoder.matches(password, u.getPassword())) throw new UnauthorizedException("Invalid credentials");
         return jwtUtil.generateToken(u.getEmail(), u.getId());
     }
       
@@ -51,7 +54,7 @@ public class AuthService {
         }
 
         String email = auth.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found"));
     }
     
 }

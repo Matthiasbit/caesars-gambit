@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.risiko.contoller.GameController;
+import com.risiko.exception.NotFoundException;
 import com.risiko.model.Room;
 import com.risiko.repository.UserRepository;
 
@@ -61,9 +62,8 @@ public class RoomService {
 
     public void sendMessage(int roomId, long userId, String message) {
         Room room = rooms.get(roomId);
-        if (room != null) {
-            room.sendMessage(userId, message);
-        }
+        if (room == null) throw new NotFoundException("Room not found");
+        room.sendMessage(userId, message);
     }
 
     public void startGame(int roomId) {
@@ -71,7 +71,7 @@ public class RoomService {
         if (room != null) {
             room.startGame();
         } else {
-            throw new RuntimeException("Room not found");
+            throw new NotFoundException("Room not found");
         }
     }
 }

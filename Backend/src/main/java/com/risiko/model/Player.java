@@ -61,6 +61,7 @@ public class Player {
     }
 
     public void askDistTroops(int sum) {
+        if (emitter == null) return;
         try {
             emitter.send(SseEmitter.event().name("askDistTroops").data(sum - territories.size()));
         } catch (IOException e) {

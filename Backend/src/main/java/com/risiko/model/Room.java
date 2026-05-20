@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.risiko.exception.ConflictException;
 import com.risiko.contoller.GameController;
 import com.risiko.model.dto.ChatMessageDto;
 import com.risiko.model.dto.LobbyPlayerDto;
@@ -29,7 +30,7 @@ public class Room {
 
     public void joinRoom(long userId, boolean host) {
         if (gameStarted) {
-            // do some error handling and unexpected error handling
+            throw new ConflictException("Das Spiel läuft bereits.");
         }
         Player player = new Player(userId, userRepository);
         players.add(player);
@@ -43,7 +44,7 @@ public class Room {
 
     public void leaveRoom(long userId) {
         if (gameStarted) {
-            // do some error handling and unexpected error handling
+            throw new ConflictException("Das Spiel läuft bereits.");
         }
         players = players.stream()
             .filter(p -> p.getUserId() != userId)

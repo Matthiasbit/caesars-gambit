@@ -26,6 +26,9 @@ public class Gamestate {
     }
 
     public void start() {
+        if (players.size() < 2) {
+            throw new IllegalStateException("Mindestens 2 Spieler benötigt.");
+        }
         Collections.shuffle(players);
         List<Territorries> territoryList = new ArrayList<>(Arrays.asList(Territorries.values()));
         Collections.shuffle(territoryList);
@@ -67,7 +70,9 @@ public class Gamestate {
                 .collect(Collectors.toList());
         gameController.broadcastEvent(emitters, "currentPlayer", currentPlayer.username);
         List<SseEmitter> currentPlayeremitter = new ArrayList<>();
-        currentPlayeremitter.add(currentPlayer.emitter);
+        if (currentPlayer.emitter != null) {
+            currentPlayeremitter.add(currentPlayer.emitter);
+        }
         gameController.broadcastEvent(currentPlayeremitter, "askDistTroops", calculateReinforcements(currentPlayer));
     }
 
