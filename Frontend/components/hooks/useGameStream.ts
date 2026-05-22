@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 
 type ChatMessage = { username: string; message: string };
 
+export type EventsourceTypes = {
+  playerNames: string[]; 
+    chatMessages: ChatMessage[];
+    gameStarted: boolean;
+    gameStateJson: string | null;
+    pendingDistCount: number | null;
+    setPendingDistCount: (count: number | null) => void;
+    setGameStarted: (started: boolean) => void;
+
+};
+
 export function useGameStream(
   roomId?: string,
   currentUsername?: string | null,
@@ -102,5 +113,5 @@ export function useGameStream(
     pendingDistCount,
     setPendingDistCount,
     setGameStarted,
-  } as const;
+  } as EventsourceTypes;
 }

@@ -1,6 +1,6 @@
 import GameCard from './GameCard'
 import { Chat } from '../ui/chat'
-import { use, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DistributionDialog } from './DistributionDialog'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 import { distTroops } from '../api/distTroops'
@@ -8,14 +8,11 @@ import { useGetCurrentUser } from '../api/getCurrentUser'
 import { moveTroops } from '../api/moveTroops'
 import { attack } from '../api/attack'
 import { endTurn } from '../api/endTurn'
-import router from 'next/router'
-import { useGameStream } from '../hooks/useGameStream'
+import { EventsourceTypes } from '../hooks/useGameStream'
 
 type GamePageProps = {
     roomId: string
-    gameStateJson: string | null
-    playerNames: string[]
-    chatMessages: { username: string; message: string }[]
+    eventsource: EventsourceTypes
 }
 
 type TerritoryData = {
@@ -24,7 +21,7 @@ type TerritoryData = {
     troops: number
 }
 
-export default function GamePage({ roomId }: GamePageProps) {
+export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [regionClicked, setRegionClicked] = useState<string | null>(null)
     const [dialogTerritory, setDialogTerritory] = useState<string | null>(null);
     const [territories, setTerritories] = useState<TerritoryData[]>([])
@@ -37,34 +34,18 @@ export default function GamePage({ roomId }: GamePageProps) {
     const currentUser = useGetCurrentUser()
     const [currentUsername, setCurrentUsername] = useState<string | null>(null)
 
-    const {
-        playerNames,
-        chatMessages,
-        gameStarted,
-        gameStateJson,
-        setGameStarted: setStreamGameStarted,
-        pendingDistCount,
-        setPendingDistCount,
-      } = useGameStream(
-        roomId,
-        currentUsername,
-        () => alert("Du bist am Zug! Verteile deine Truppen."),
-        () => {
-          router.push(`/room/${roomId}?started=true`);
-        }
-      );
-
     useEffect(() => {
         if (currentUser.isSuccess && currentUser.data) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCurrentUsername(currentUser.data.username);
         }
     }, [currentUser]);
 
     useEffect(() => {
-        if (!gameStateJson) return
+        if (!eventsource.gameStateJson) return
 
         try {
-            const parsed = JSON.parse(gameStateJson)
+            const parsed = JSON.parse(eventsource.gameStateJson)
             if (Array.isArray(parsed)) {
                 // eslint-disable-next-line react-hooks/set-state-in-effect
                 setTerritories(parsed)
@@ -72,7 +53,7 @@ export default function GamePage({ roomId }: GamePageProps) {
         } catch (err) {
             console.error('Fehler beim Parsen von gameStateJson:', err)
         }
-    }, [gameStateJson])
+    }, [eventsource.gameStateJson])
 
     function territoryOwnedByCurrentUser(territoryId: string): boolean {
         const territory = territories.find((t) => t.territory === territoryId)
@@ -85,7 +66,7 @@ export default function GamePage({ roomId }: GamePageProps) {
     }
 
     function onDistSubmit(territoryId: string) {
-        if (pendingDistCount == null) return
+        if (eventsource.pendingDistCount == null) return
         if (!territoryOwnedByCurrentUser(territoryId)) {
             console.log("Hier noch was einbauen für UX")
             return;
@@ -95,11 +76,11 @@ export default function GamePage({ roomId }: GamePageProps) {
     }
 
     async function handleDialogConfirm(num: number) {
-        if (pendingDistCount == null || !dialogTerritory) return
+        if (eventsource.pendingDistCount == null || !dialogTerritory) return
 
         await distTroops({sum: num, to: dialogTerritory, roomId});
-
-        setPendingDistCount((prev: number | null) => {
+        // @ts-expect-error - kein Plan warum er hier rumheult
+        eventsource.setPendingDistCount((prev: number | null) => {
             const remaining = prev !== null ? prev - num : null
             return remaining !== null ? remaining > 0 ? remaining : null : null
         })
@@ -125,7 +106,7 @@ export default function GamePage({ roomId }: GamePageProps) {
             return
         }
 
-        if (pendingDistCount) {
+        if (eventsource.pendingDistCount) {
             onDistSubmit(regionId)
             return
         }
@@ -155,7 +136,7 @@ export default function GamePage({ roomId }: GamePageProps) {
     }
 
     async function handleEndTurn() {
-        if (pendingDistCount) {
+        if (eventsource.pendingDistCount) {
             return
         }
         await endTurn(roomId);
@@ -163,15 +144,15 @@ export default function GamePage({ roomId }: GamePageProps) {
 
     return (
         <>
-            {pendingDistCount != null && (
+            {eventsource.pendingDistCount != null && (
                 <div style={{ position: 'fixed', right: 16, top: 16, zIndex: 2000 }}>
                     <div className="rounded bg-[#0b1220] border border-[rgba(59,130,246,0.25)] px-4 py-3 text-white shadow">
                         <div className="flex items-center gap-3">
                             <div>
-                                <strong>{pendingDistCount}</strong> Truppen verteilen — klicke auf ein Gebiet, das du besitzt.
+                                <strong>{eventsource.pendingDistCount}</strong> Truppen verteilen — klicke auf ein Gebiet, das du besitzt.
                             </div>
                             <div>
-                                <button className="ml-2 px-2 py-1 bg-red-600 rounded" onClick={() => setPendingDistCount(null)}>Abbrechen</button>
+                                <button className="ml-2 px-2 py-1 bg-red-600 rounded" onClick={() => eventsource.setPendingDistCount(null)}>Abbrechen</button>
                             </div>
                         </div>
                     </div>
@@ -186,7 +167,7 @@ export default function GamePage({ roomId }: GamePageProps) {
 
                         <div className="space-y-2 flex-shrink-0">
                             <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Spieler</h2>
-                            {playerNames.map((name, index) => (
+                            {eventsource.playerNames.map((name, index) => (
                                 <div key={index} className="flex items-center gap-3 p-2 rounded-md border border-[rgba(59,130,246,0.1)] hover:border-[rgba(59,130,246,0.3)] transition-colors">
                                     <div
                                         className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white font-semibold flex-shrink-0"
@@ -202,7 +183,7 @@ export default function GamePage({ roomId }: GamePageProps) {
                         <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
                             <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Chat</h2>
                             <div className="bg-white border rounded-md p-3 shadow-sm flex-grow flex flex-col overflow-hidden w-full">
-                                <Chat msg={chatMessages} roomId={roomId} />
+                                <Chat msg={eventsource.chatMessages} roomId={roomId} />
                             </div>
                         </div>
                     </div>
@@ -211,7 +192,7 @@ export default function GamePage({ roomId }: GamePageProps) {
                         <div className="relative rounded-xl border border-[rgba(59,130,246,0.25)] bg-black/30 overflow-hidden shadow-md w-full" style={{}}>
                             <GameCard
                                 onRegionClick={handleRegionClick}
-                                gameStateJson={gameStateJson}
+                                gameStateJson={eventsource.gameStateJson}
                             />
                             <button onClick={() => handleEndTurn()}>EndTurn</button>
                         </div>
@@ -220,7 +201,7 @@ export default function GamePage({ roomId }: GamePageProps) {
                 <DistributionDialog
                     isOpen={dialogTerritory != null || moveDialog || attackDialog}
                     territoryName={moveDialog ? "Truppen hierhin verschieben " + moveTo : attackDialog ? "Truppen angreifen " + moveTo : dialogTerritory || ""}
-                    availableTroops={(moveDialog || attackDialog) ? moveTroopsCount || 0 : pendingDistCount || 0}
+                    availableTroops={(moveDialog || attackDialog) ? moveTroopsCount || 0 : eventsource.pendingDistCount || 0}
                     onConfirm={moveDialog ? handleMoveConfirm : attackDialog ? handleAttackConfirm : handleDialogConfirm}
                     onCancel={() => { setDialogTerritory(null); setMoveDialog(false); setAttackDialog(false) }}
                     moveDialog={moveDialog}

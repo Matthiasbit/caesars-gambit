@@ -14,13 +14,7 @@ export default function RoomPage() {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
-  const {
-    playerNames,
-    chatMessages,
-    gameStarted,
-    gameStateJson,
-    setGameStarted: setStreamGameStarted,
-  } = useGameStream(
+  const eventsource = useGameStream(
     roomId,
     currentUsername,
     () => alert("Du bist am Zug! Verteile deine Truppen."),
@@ -29,32 +23,27 @@ export default function RoomPage() {
     }
   );
 
-
   useEffect(() => {
     if (currentUser.isSuccess && currentUser.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentUsername(currentUser.data.username);
     }
   }, [currentUser]);
 
   useEffect(() => {
     if (searchParams.get("started") === "true") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStreamGameStarted(true);
+      eventsource.setGameStarted(true);
     }
-  }, [searchParams, setStreamGameStarted]);
-
-  function handleGameStarted() {
-    setStreamGameStarted(true);
-  }
+  }, [searchParams, eventsource.setGameStarted, eventsource]);
 
   return (
     <>
-      {gameStarted ? (
+      {eventsource.gameStarted ? (
         <>
-          <GamePage roomId={roomId!} gameStateJson={gameStateJson} playerNames={playerNames} chatMessages={chatMessages} />
+          <GamePage roomId={roomId!} eventsource={eventsource} />
         </>
       ) : (
-        <Lobby roomId={roomId!} playerNames={playerNames} chatMessages={chatMessages} onGameStart={() => handleGameStarted()} router={router} />
+        <Lobby roomId={roomId!} eventsource={eventsource}  router={router} />
       )}
     </>
   );
