@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { startGame } from './startGame'
+import { ApiError } from './api'
 
 
 describe('startGame', () => {
@@ -29,7 +30,9 @@ describe('startGame', () => {
 
     // Todo: Error Message funktioniert so glaube ich nicht müsste in component und hier jenachdem angepasst werden
     
-    await expect(startGame(123)).rejects.toThrow('Failed to start game')
+    const request = startGame(123)
+    await expect(request).rejects.toBeInstanceOf(ApiError)
+    await expect(request).rejects.toMatchObject({ status: 401 })
   })
 
   it('should throw error on 404 room not found', async () => {
@@ -38,6 +41,8 @@ describe('startGame', () => {
       status: 404,
     })
 
-    await expect(startGame(999)).rejects.toThrow('Failed to start game')
+    const request = startGame(999)
+    await expect(request).rejects.toBeInstanceOf(ApiError)
+    await expect(request).rejects.toMatchObject({ status: 404 })
   })
 })

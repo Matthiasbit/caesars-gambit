@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { distTroops } from './distTroops'
+import { ApiError } from './api'
 
 describe('distTroops', () => {
   beforeEach(() => {
@@ -22,7 +23,9 @@ describe('distTroops', () => {
     })
     
 
-    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('Failed to distribute troops')
+    const request = distTroops({ sum: 5, to: 'Palatin', roomId: '123' })
+    await expect(request).rejects.toBeInstanceOf(ApiError)
+    await expect(request).rejects.toMatchObject({ status: 401 })
   })
 
   it('should throw error on 500 server error', async () => {
@@ -31,7 +34,9 @@ describe('distTroops', () => {
       status: 500,
     })
 
-    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('Failed to distribute troops')
+    const request = distTroops({ sum: 5, to: 'Palatin', roomId: '123' })
+    await expect(request).rejects.toBeInstanceOf(ApiError)
+    await expect(request).rejects.toMatchObject({ status: 500 })
   })
 
   it('should send correct parameters in body', async () => {

@@ -1,5 +1,7 @@
-import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import type { UseMutationOptions } from "@tanstack/react-query";
 import { postJson } from "./api";
+import { queryKeys } from "./queryKeys";
+import { useApiMutation } from "./useApiMutation";
 
 export type MoveTroopsPayload = {
   sum: number;
@@ -13,8 +15,9 @@ export async function moveTroops({ sum, from, to, roomId }: MoveTroopsPayload) {
 }
 
 export function useMoveTroops(options?: UseMutationOptions<void, Error, MoveTroopsPayload>) {
-  return useMutation({
+  return useApiMutation({
     mutationFn: moveTroops,
+    invalidateQueryKeys: [queryKeys.roomState],
     ...options,
   });
 }

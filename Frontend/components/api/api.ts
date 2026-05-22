@@ -15,6 +15,21 @@ export function defaultApiHeaders(): HeadersInit {
   return { "Content-Type": "application/json" };
 }
 
+async function readResponseText(response: Response): Promise<string> {
+  if (typeof response.text === "function") {
+    return response.text().catch(() => "");
+  }
+
+  if (typeof response.json === "function") {
+    return response
+      .json()
+      .then((body) => JSON.stringify(body))
+      .catch(() => "");
+  }
+
+  return "";
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(apiUrl(path), {
     credentials: "include",
@@ -22,20 +37,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     ...init,
   });
 
-  const responseText = await response.text().catch(() => "");
-  
-  if (response.status === 403) {
-    if (typeof window !== "undefined") {
-      if (window.location.pathname !== "/") {
-        window.location.href = "/auth/login?m=Du+bist+nicht+angemeldet.+Bitte+logge+dich+ein+oder+registriere+dich+zuerst.";
-      }
-    }
-    throw new ApiError(
-      response.status,
-      `API request failed with status ${response.status} ${response.statusText}`,
-      responseText
-    );
-  }
+  const responseText = await readResponseText(response);
 
   if (!response.ok) {
     throw new ApiError(
