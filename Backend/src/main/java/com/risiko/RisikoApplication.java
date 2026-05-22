@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
+// Dummy change for CI smoke testing.
 public class RisikoApplication {
     public static void main(String[] args) {
         SpringApplication.run(RisikoApplication.class, args);

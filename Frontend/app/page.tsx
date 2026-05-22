@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import packageJson from "@/package.json";
 
 const APP_VERSION = packageJson.version;
+// Dummy change for CI smoke testing.
 
 export default function Home() {
   const router = useRouter();
