@@ -17,6 +17,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      ci: ${{ steps.filter.outputs.ci }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3.0.2
@@ -27,12 +28,14 @@ jobs:
               - 'Backend/**'
             frontend:
               - 'Frontend/**'
+            ci:
+              - '.github/workflows/dockerbuild.yml'
 
   # ── CI: Validierung bei jedem Push und PR ──────────────────────────────────
   test-backend:
     name: Backend - Compile & Test
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +53,7 @@ jobs:
   test-frontend:
     name: Frontend - Build, Test & Lint
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,7 +91,7 @@ jobs:
   # ── CI: Docker-Build-Test bei PRs (kein Push) ───────────────────────────
   build-test-backend:
     name: Docker Build Test Backend (PR only)
-    if: github.event_name == 'pull_request' && needs.changes.outputs.backend == 'true'
+    if: github.event_name == 'pull_request' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true')
     needs: [changes, test-backend]
     runs-on: ubuntu-latest
     steps:
@@ -106,7 +109,7 @@ jobs:
 
   build-test-frontend:
     name: Docker Build Test Frontend (PR only)
-    if: github.event_name == 'pull_request' && needs.changes.outputs.frontend == 'true'
+    if: github.event_name == 'pull_request' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true')
     needs: [changes, test-frontend]
     runs-on: ubuntu-latest
     steps:
