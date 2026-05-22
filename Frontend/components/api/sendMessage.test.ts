@@ -11,7 +11,7 @@ describe('sendMessage', () => {
   it('should succeed with valid message', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
 
-    await expect(sendMessage(123, 'Hello')).resolves.toBeUndefined()
+    await expect(sendMessage({ id: 123, message: 'Hello' })).resolves.toBeUndefined()
   })
 
   it('should throw error on failed send', async () => {
@@ -20,13 +20,13 @@ describe('sendMessage', () => {
       status: 500,
     })
 
-    await expect(sendMessage(123, 'Hello')).rejects.toThrow('Failed to send message')
+    await expect(sendMessage({ id: 123, message: 'Hello' })).rejects.toThrow('Failed to send message')
   })
 
   it('should send message with correct body and URL', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
 
-    await sendMessage(789, 'Test message')
+    await sendMessage({ id: 789, message: 'Test message' })
 
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:8080/api/rooms/message/789',
