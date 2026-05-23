@@ -1,15 +1,13 @@
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
+
 export async function startGame(id: number) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/rooms/start/${id}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
+  return postJson<void>(`/api/rooms/start/${id}`);
+}
 
-    if (!response.ok) {
-        throw new Error('Failed to start game: \n' + response.body);
-    }
-
-    return;
+export function useStartGame(options?: UseMutationOptions<void, Error, number>) {
+  return useMutation({
+    mutationFn: startGame,
+    ...options,
+  });
 }

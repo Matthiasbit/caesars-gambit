@@ -12,7 +12,7 @@ describe('distTroops', () => {
       ok: true,
     })
 
-    await expect(distTroops(5, 'Palatin', '123')).resolves.toBeUndefined()
+    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).resolves.toBeUndefined()
   })
 
   it('should throw error on 401 unauthorized', async () => {
@@ -22,7 +22,7 @@ describe('distTroops', () => {
     })
     
 
-    await expect(distTroops(5, 'Palatin', '123')).rejects.toThrow('Failed to distribute troops')
+    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('Failed to distribute troops')
   })
 
   it('should throw error on 500 server error', async () => {
@@ -31,13 +31,13 @@ describe('distTroops', () => {
       status: 500,
     })
 
-    await expect(distTroops(5, 'Palatin', '123')).rejects.toThrow('Failed to distribute troops')
+    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('Failed to distribute troops')
   })
 
   it('should send correct parameters in body', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
 
-    await distTroops(5, 'Palatin', '123')
+    await distTroops({ sum: 5, to: 'Palatin', roomId: '123' })
 
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:8080/api/game/distTroops',

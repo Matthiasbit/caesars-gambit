@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { sendMessage } from "../api/sendMessage";
+import { sendMessage, useSendMessage } from "../api/sendMessage";
 import { useGetCurrentUser } from "../api/getCurrentUser";
 import { Spinner } from "./spinner";
 
@@ -13,6 +13,7 @@ export function Chat({ msg, roomId }: ChatProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const numericRoomId = typeof roomId === "string" ? Number(roomId) : (roomId as number | undefined);
   const currentUser = useGetCurrentUser();
+  const sendMessageMutation = useSendMessage();
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -24,14 +25,14 @@ export function Chat({ msg, roomId }: ChatProps) {
     if (!numericRoomId || Number.isNaN(numericRoomId)) return;
 
     try {
-      await sendMessage(numericRoomId, messageInput.trim());
+      await sendMessageMutation.mutateAsync({ id: numericRoomId, message: messageInput.trim() });
       setMessageInput("");
     } catch (err) {
       console.error("Failed to send message", err);
     }
   };
 
-  if (currentUser.status === "loading") {
+  if (currentUser.isPending) {
     return (
       <div className="flex min-h-[240px] items-center justify-center p-4 text-slate-400">
         <div className="flex items-center gap-2 text-sm">
@@ -42,7 +43,7 @@ export function Chat({ msg, roomId }: ChatProps) {
     );
   }
 
-  if (currentUser.status === "error") {
+  if (currentUser.isError) {
     return (
       <div className="flex min-h-[240px] items-center justify-center p-4 text-center text-slate-400">
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
@@ -76,7 +77,7 @@ export function Chat({ msg, roomId }: ChatProps) {
                 .toUpperCase()
             : "?";
 
-          const isOwnMessage = currentUser.status === "authenticated" && currentUser.user.username === item.username;
+          const isOwnMessage = currentUser.data?.username === item.username;
 
           return (
             <div key={index} className="flex items-start gap-3">
@@ -117,7 +118,7 @@ export function Chat({ msg, roomId }: ChatProps) {
               void handleSend();
             }
           }}
-          disabled={currentUser.status === "unauthenticated"}
+          disabled={currentUser.isPending}
         />
 
         <button
@@ -126,12 +127,12 @@ export function Chat({ msg, roomId }: ChatProps) {
           }`}
           onClick={() => void handleSend()}
           disabled={
-            !messageInput.trim() || !numericRoomId || Number.isNaN(numericRoomId) || currentUser.status === "unauthenticated"
+            !messageInput.trim() || !numericRoomId || Number.isNaN(numericRoomId) || currentUser.isPending
           }>
           Senden
         </button>
       </div>
-      {currentUser.status === "unauthenticated" && (
+      {currentUser.isPending && (
         <div className="mt-2 text-sm text-red-400">Bitte melde dich an, um Nachrichten zu senden.</div>
       )}
     </div>

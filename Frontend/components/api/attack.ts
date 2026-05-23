@@ -1,16 +1,20 @@
-export async function attack(sum: number, from: string, to: string, roomId: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/game/attack`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ from, to, sum, roomId }),
-    });
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { postJson } from "./api";
 
-    if (!response.ok) {
-        throw new Error('Failed to attack');
-    }
+export type AttackPayload = {
+  sum: number;
+  from: string;
+  to: string;
+  roomId: string;
+};
 
-    return;
+export async function attack({ sum, from, to, roomId }: AttackPayload) {
+  return postJson<void>("/api/game/attack", { from, to, sum, roomId });
+}
+
+export function useAttack(options?: UseMutationOptions<void, Error, AttackPayload>) {
+  return useMutation({
+    mutationFn: attack,
+    ...options,
+  });
 }
