@@ -17,6 +17,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      ci: ${{ steps.filter.outputs.ci }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3.0.2
@@ -27,12 +28,14 @@ jobs:
               - 'Backend/**'
             frontend:
               - 'Frontend/**'
+            ci:
+              - '.github/workflows/dockerbuild.yml'
 
   # ── CI: Validierung bei jedem Push und PR ──────────────────────────────────
   test-backend:
     name: Backend - Compile & Test
     needs: changes
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,14 +46,14 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Compile and run tests
+      - name: Build and test backend
         working-directory: ./Backend
-        run: mvn package -DskipTests   # Tests überspringen bis Testcontainers eingerichtet sind
+        run: mvn -B verify
 
   test-frontend:
-    name: Frontend - Lint & Typecheck
+    name: Frontend - Build, Test & Lint
     needs: changes
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,40 +72,57 @@ jobs:
         working-directory: ./Frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
+      - name: Lint frontend
         working-directory: ./Frontend
         run: pnpm lint
 
-      - name: Type check
+      - name: Type check frontend
         working-directory: ./Frontend
         run: npx tsc --noEmit
 
+      - name: Run frontend tests
+        working-directory: ./Frontend
+        run: pnpm test -- --run
+
+      - name: Build frontend
+        working-directory: ./Frontend
+        run: pnpm build
+
   # ── CI: Docker-Build-Test bei PRs (kein Push) ───────────────────────────
-  build-test:
-    name: Docker Build Test (PR only)
-    if: |
-      github.event_name == 'pull_request' &&
-      (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true')
-    needs: [changes, test-backend, test-frontend]
+  build-test-backend:
+    name: Docker Build Test Backend (PR only)
+    if: github.event_name == 'pull_request' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true')
+    needs: [changes, test-backend]
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - name: backend
-            context: ./Backend
-          - name: frontend
-            context: ./Frontend
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build ${{ matrix.name }} (no push)
+      - name: Build backend (no push)
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.context }}/dockerfile
+          context: ./Backend
+          file: ./Backend/dockerfile
+          push: false
+
+  build-test-frontend:
+    name: Docker Build Test Frontend (PR only)
+    if: github.event_name == 'pull_request' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true')
+    needs: [changes, test-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build frontend (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Frontend
+          file: ./Frontend/dockerfile
           push: false
 
   # ── CD: Docker-Images bauen & nach GHCR pushen ────────────────────────────
