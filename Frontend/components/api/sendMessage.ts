@@ -1,7 +1,5 @@
-import type { UseMutationOptions } from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { postJson } from "./api";
-import { queryKeys } from "./queryKeys";
-import { useApiMutation } from "./useApiMutation";
 
 export type SendMessagePayload = {
   id: number;
@@ -13,9 +11,8 @@ export async function sendMessage({ id, message }: SendMessagePayload) {
 }
 
 export function useSendMessage(options?: UseMutationOptions<void, Error, SendMessagePayload>) {
-  return useApiMutation({
+  return useMutation({
     mutationFn: sendMessage,
-    invalidateQueryKeys: [queryKeys.roomState],
     ...options,
   });
 }

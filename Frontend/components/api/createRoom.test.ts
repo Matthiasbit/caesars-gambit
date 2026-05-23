@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { createRoom } from './createRoom'
-import { ApiError } from './api'
 
 
 describe('createRoom', () => {
@@ -38,9 +37,7 @@ describe('createRoom', () => {
       status: 401,
     })
 
-    const request = createRoom()
-    await expect(request).rejects.toBeInstanceOf(ApiError)
-    await expect(request).rejects.toMatchObject({ status: 401 })
+    await expect(createRoom()).rejects.toThrow('Failed to create room')
   })
 
   it('should throw error on 500 server error', async () => {
@@ -49,9 +46,7 @@ describe('createRoom', () => {
       status: 500,
     })
 
-    const request = createRoom()
-    await expect(request).rejects.toBeInstanceOf(ApiError)
-    await expect(request).rejects.toMatchObject({ status: 500 })
+    await expect(createRoom()).rejects.toThrow('Failed to create room')
   })
 
 })

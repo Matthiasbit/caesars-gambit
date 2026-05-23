@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { sendMessage } from './sendMessage'
-import { ApiError } from './api'
 
 
 describe('sendMessage', () => {
@@ -21,9 +20,7 @@ describe('sendMessage', () => {
       status: 500,
     })
 
-    const request = sendMessage({ id: 123, message: 'Hello' })
-    await expect(request).rejects.toBeInstanceOf(ApiError)
-    await expect(request).rejects.toMatchObject({ status: 500 })
+    await expect(sendMessage({ id: 123, message: 'Hello' })).rejects.toThrow('Failed to send message')
   })
 
   it('should send message with correct body and URL', async () => {

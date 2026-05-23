@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { leaveRoom } from './leaveRoom'
-import { ApiError } from './api'
 
 describe('leaveRoom', () => {
   beforeEach(() => {
@@ -22,9 +21,7 @@ describe('leaveRoom', () => {
 
     // TODO: Error Message muss in dazugehöriger component angepasst werden
 
-    const request = leaveRoom(123)
-    await expect(request).rejects.toBeInstanceOf(ApiError)
-    await expect(request).rejects.toMatchObject({ status: 401 })
+    await expect(leaveRoom(123)).rejects.toThrow('Failed to leave room')
   })
 
   it('should throw error on 404 room not found', async () => {
@@ -33,9 +30,7 @@ describe('leaveRoom', () => {
       status: 404,
     })
 
-    const request = leaveRoom(999)
-    await expect(request).rejects.toBeInstanceOf(ApiError)
-    await expect(request).rejects.toMatchObject({ status: 404 })
+    await expect(leaveRoom(999)).rejects.toThrow('Failed to leave room')
   })
 
   it('should call correct URL with room id', async () => {

@@ -1,7 +1,5 @@
-import type { UseMutationOptions } from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { postJson } from "./api";
-import { queryKeys } from "./queryKeys";
-import { useApiMutation } from "./useApiMutation";
 
 export type AttackPayload = {
   sum: number;
@@ -15,9 +13,8 @@ export async function attack({ sum, from, to, roomId }: AttackPayload) {
 }
 
 export function useAttack(options?: UseMutationOptions<void, Error, AttackPayload>) {
-  return useApiMutation({
+  return useMutation({
     mutationFn: attack,
-    invalidateQueryKeys: [queryKeys.roomState],
     ...options,
   });
 }

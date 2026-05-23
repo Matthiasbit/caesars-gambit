@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import type { UserDto } from "@/types/dto";
 import { getJson, ApiError } from "./api";
-import { queryKeys } from "./queryKeys";
 
 
 export async function getCurrentUser() {
@@ -18,5 +17,5 @@ export async function getCurrentUser() {
 }
 
 export function useGetCurrentUser() {
-  return useQuery({ queryKey: queryKeys.currentUser, queryFn: getCurrentUser });
+  return useQuery({ queryKey: ["currentUser"], queryFn: getCurrentUser });
 }

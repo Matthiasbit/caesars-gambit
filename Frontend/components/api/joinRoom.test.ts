@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { joinRoom } from './joinRoom'
-import { ApiError } from './api'
 
 
 describe('joinRoom', () => {
@@ -40,8 +39,6 @@ describe('joinRoom', () => {
       status: 404,
     })
 
-    const request = joinRoom(999)
-    await expect(request).rejects.toBeInstanceOf(ApiError)
-    await expect(request).rejects.toMatchObject({ status: 404 })
+    await expect(joinRoom(999)).rejects.toThrow('Failed to join room')
   })
 })
