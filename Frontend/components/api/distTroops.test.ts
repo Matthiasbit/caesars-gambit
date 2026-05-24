@@ -10,6 +10,9 @@ describe('distTroops', () => {
   it('should succeed with valid parameters', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
     })
 
     await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).resolves.toBeUndefined()
@@ -19,23 +22,32 @@ describe('distTroops', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 401,
+      statusText: 'Unauthorized',
+      text: () => Promise.resolve(''),
     })
     
 
-    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('Failed to distribute troops')
+    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('API request failed with status')
   })
 
   it('should throw error on 500 server error', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
+      statusText: 'Internal Server Error',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('Failed to distribute troops')
+    await expect(distTroops({ sum: 5, to: 'Palatin', roomId: '123' })).rejects.toThrow('API request failed with status')
   })
 
   it('should send correct parameters in body', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await distTroops({ sum: 5, to: 'Palatin', roomId: '123' })
 

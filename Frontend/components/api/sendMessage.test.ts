@@ -9,7 +9,12 @@ describe('sendMessage', () => {
   })
 
   it('should succeed with valid message', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await expect(sendMessage({ id: 123, message: 'Hello' })).resolves.toBeUndefined()
   })
@@ -18,13 +23,20 @@ describe('sendMessage', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
+      statusText: 'Internal Server Error',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(sendMessage({ id: 123, message: 'Hello' })).rejects.toThrow('Failed to send message')
+    await expect(sendMessage({ id: 123, message: 'Hello' })).rejects.toThrow('API request failed with status')
   })
 
   it('should send message with correct body and URL', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await sendMessage({ id: 789, message: 'Test message' })
 
