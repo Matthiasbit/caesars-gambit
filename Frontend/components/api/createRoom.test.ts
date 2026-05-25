@@ -13,7 +13,9 @@ describe('createRoom', () => {
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(mockRoomData),
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(JSON.stringify(mockRoomData)),
     })
     try {
       const result = await createRoom()
@@ -35,18 +37,22 @@ describe('createRoom', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 401,
+      statusText: 'Unauthorized',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(createRoom()).rejects.toThrow('Failed to create room')
+    await expect(createRoom()).rejects.toThrow('API request failed with status')
   })
 
   it('should throw error on 500 server error', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
+      statusText: 'Internal Server Error',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(createRoom()).rejects.toThrow('Failed to create room')
+    await expect(createRoom()).rejects.toThrow('API request failed with status')
   })
 
 })

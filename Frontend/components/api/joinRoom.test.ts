@@ -9,7 +9,12 @@ describe('joinRoom', () => {
   })
 
   it('should succeed with valid room id', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await expect(joinRoom(123)).resolves.toBeUndefined()
     expect(global.fetch).toHaveBeenCalledWith(
@@ -22,7 +27,12 @@ describe('joinRoom', () => {
   })
 
   it('should accept host parameter as true', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await joinRoom(123, true)
     expect(global.fetch).toHaveBeenCalledWith(
@@ -37,8 +47,10 @@ describe('joinRoom', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
+      statusText: 'Not Found',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(joinRoom(999)).rejects.toThrow('Failed to join room')
+    await expect(joinRoom(999)).rejects.toThrow('API request failed with status')
   })
 })

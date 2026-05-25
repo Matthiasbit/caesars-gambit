@@ -8,7 +8,12 @@ describe('leaveRoom', () => {
   })
 
   it('should succeed with valid room id', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await expect(leaveRoom(123)).resolves.toBeUndefined()
   })
@@ -17,24 +22,33 @@ describe('leaveRoom', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 401,
+      statusText: 'Unauthorized',
+      text: () => Promise.resolve(''),
     })
 
     // TODO: Error Message muss in dazugehöriger component angepasst werden
 
-    await expect(leaveRoom(123)).rejects.toThrow('Failed to leave room')
+    await expect(leaveRoom(123)).rejects.toThrow('API request failed with status')
   })
 
   it('should throw error on 404 room not found', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
+      statusText: 'Not Found',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(leaveRoom(999)).rejects.toThrow('Failed to leave room')
+    await expect(leaveRoom(999)).rejects.toThrow('API request failed with status')
   })
 
   it('should call correct URL with room id', async () => {
-    ;(global.fetch as Mock).mockResolvedValueOnce({ ok: true })
+    ;(global.fetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
+    })
 
     await leaveRoom(456)
 

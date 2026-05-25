@@ -12,6 +12,8 @@ describe('startGame', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(''),
     })
 
     await expect(startGame(123)).resolves.toBeUndefined()
@@ -25,19 +27,23 @@ describe('startGame', () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 401,
+      statusText: 'Unauthorized',
+      text: () => Promise.resolve(''),
     })
 
     // Todo: Error Message funktioniert so glaube ich nicht müsste in component und hier jenachdem angepasst werden
     
-    await expect(startGame(123)).rejects.toThrow('Failed to start game')
+    await expect(startGame(123)).rejects.toThrow('API request failed with status')
   })
 
   it('should throw error on 404 room not found', async () => {
     ;(global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
+      statusText: 'Not Found',
+      text: () => Promise.resolve(''),
     })
 
-    await expect(startGame(999)).rejects.toThrow('Failed to start game')
+    await expect(startGame(999)).rejects.toThrow('API request failed with status')
   })
 })
