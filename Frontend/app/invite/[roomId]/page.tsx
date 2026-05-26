@@ -22,19 +22,14 @@ export default function InviteRoomPage() {
   const hasUser = currentUser.isSuccess && Boolean(currentUser.data);
 
   useEffect(() => {
-    if (!parsedRoomId) {
-      setJoinError("Ungültiger Invite-Link.");
-      return;
-    }
-
-    if (currentUser.isLoading || !hasUser || joinAttemptedRef.current) {
+    if (!parsedRoomId || currentUser.isLoading || !hasUser || joinAttemptedRef.current) {
       return;
     }
 
     joinAttemptedRef.current = true;
-    setJoinError(null);
 
     const join = async () => {
+      setJoinError(null);
       try {
         await joinRoom(parsedRoomId);
         router.replace(`/room/${parsedRoomId}`);

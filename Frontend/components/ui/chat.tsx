@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { sendMessage, useSendMessage } from "../api/sendMessage";
+import { useSendMessage } from "../api/sendMessage";
 import { useGetCurrentUser } from "../api/getCurrentUser";
 import { Spinner } from "./spinner";
 

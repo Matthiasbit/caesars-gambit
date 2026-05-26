@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { UserDto } from "@/types/dto";
 import { getJson, ApiError } from "./api";
 
