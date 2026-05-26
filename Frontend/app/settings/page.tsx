@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,10 +12,13 @@ import { useUpdateCurrentUsername } from "@/components/api/updateCurrentUsername
 export default function SettingsPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const [name, setName] = useState("");
+    const [name, setName] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<string | null>(null);
 
     const currentUser = useGetCurrentUser();
+
+    const effectiveName = name ?? currentUser.data?.username ?? "";
+
     const updateUsername = useUpdateCurrentUsername({
         onSuccess: (updatedUser) => {
             queryClient.setQueryData(["currentUser"], updatedUser);
@@ -27,16 +30,10 @@ export default function SettingsPage() {
         },
     });
 
-    useEffect(() => {
-        if (currentUser.isSuccess && currentUser.data) {
-            setName(currentUser.data.username);
-        }
-    }, [currentUser.data, currentUser.isSuccess]);
-
     const canSave =
         Boolean(currentUser.data) &&
-        name.trim().length > 0 &&
-        name.trim() !== currentUser.data?.username &&
+        effectiveName.trim().length > 0 &&
+        effectiveName.trim() !== currentUser.data?.username &&
         !updateUsername.isPending;
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -47,7 +44,7 @@ export default function SettingsPage() {
             return;
         }
 
-        updateUsername.mutate({ username: name });
+        updateUsername.mutate({ username: effectiveName });
     };
 
     if (currentUser.isLoading) {
@@ -131,7 +128,7 @@ export default function SettingsPage() {
                             </label>
                             <Input
                                 id="username"
-                                value={name}
+                                value={effectiveName}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                                 placeholder="Dein Name"
                                 aria-label="Spielername"
