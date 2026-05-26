@@ -1,5 +1,5 @@
 import { buildAuthRedirectUrl } from "@/lib/invite";
-import { getAuthLoginMessage } from "@/lib/authMessages";
+import { getAuthLoginReason } from "@/lib/authMessages";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -34,7 +34,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
         window.location.href = buildAuthRedirectUrl(
           "/auth/login",
           redirectTo,
-          getAuthLoginMessage(redirectTo)
+          getAuthLoginReason(redirectTo)
         );
       }
     }

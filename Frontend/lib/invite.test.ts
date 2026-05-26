@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  INVITE_LOGIN_MESSAGE,
   buildAuthRedirectUrl,
   buildInviteAuthUrl,
   buildInvitePath,
@@ -8,7 +7,7 @@ import {
   normalizeInternalRedirect,
   parseInviteRoomId,
 } from "./invite";
-import { GENERIC_LOGIN_MESSAGE, getAuthLoginMessage } from "./authMessages";
+import { AUTH_LOGIN_REASONS, GENERIC_LOGIN_MESSAGE, INVITE_LOGIN_MESSAGE, getAuthLoginMessage, getAuthLoginReason } from "./authMessages";
 
 describe("invite helpers", () => {
   it("parses invite links and query strings", () => {
@@ -22,12 +21,13 @@ describe("invite helpers", () => {
   it("builds invite urls and auth redirects", () => {
     expect(buildInvitePath(123)).toBe("/invite/123");
     expect(buildInviteUrl(123, "https://game.example.com")).toBe("https://game.example.com/invite/123");
+    expect(buildInviteAuthUrl("/auth/login", 123)).toContain("reason=invite-join");
     expect(buildInviteAuthUrl("/auth/login", 123)).toContain("redirectTo=%2Finvite%2F123");
-    expect(getAuthLoginMessage("/invite/123")).toBe(INVITE_LOGIN_MESSAGE);
-    expect(getAuthLoginMessage("/settings")).toBe(GENERIC_LOGIN_MESSAGE);
-    expect(buildAuthRedirectUrl("/auth/login", "/settings")).toContain(
-      "m=Du+musst+eingeloggt+sein%2C+um+auf+diese+Seite+zuzugreifen."
-    );
+    expect(getAuthLoginReason("/invite/123")).toBe(AUTH_LOGIN_REASONS.inviteJoin);
+    expect(getAuthLoginReason("/settings")).toBe(AUTH_LOGIN_REASONS.generic);
+    expect(getAuthLoginMessage(AUTH_LOGIN_REASONS.inviteJoin)).toBe(INVITE_LOGIN_MESSAGE);
+    expect(getAuthLoginMessage()).toBe(GENERIC_LOGIN_MESSAGE);
+    expect(buildAuthRedirectUrl("/auth/login", "/settings")).toContain("reason=auth-required");
   });
 
   it("keeps only internal redirect targets", () => {

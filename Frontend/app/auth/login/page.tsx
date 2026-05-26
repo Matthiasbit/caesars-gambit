@@ -1,13 +1,14 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/components/ui/item";
 import { SquareArrowOutUpRight } from "lucide-react";
+import { AUTH_LOGIN_REASONS, getAuthLoginMessage } from "@/lib/authMessages";
 import { normalizeInternalRedirect } from "@/lib/invite";
 
 import packageJson from "@/package.json";
@@ -20,19 +21,18 @@ function LoginForm() {
   const [err, setErr] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null); 
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const redirectTo = normalizeInternalRedirect(searchParams.get("redirectTo"));
 
   useEffect(() => {
-    const queryMessage = searchParams.get("m");
-    if (queryMessage) {
-      setMessage(queryMessage); 
+    const reason = searchParams.get("reason");
+    if (reason === AUTH_LOGIN_REASONS.inviteJoin || reason === AUTH_LOGIN_REASONS.generic) {
+      setMessage(getAuthLoginMessage(reason)); 
       const currentUrl = new URL(window.location.href);
-      currentUrl.searchParams.delete("m");
+      currentUrl.searchParams.delete("reason");
       router.replace(`${currentUrl.pathname}${currentUrl.search}`);
     }
-  }, [pathname, searchParams, router]);
+  }, [searchParams, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,8 +1,6 @@
-import { GENERIC_LOGIN_MESSAGE } from "@/lib/authMessages";
+import { AUTH_LOGIN_REASONS, type AuthLoginReason } from "@/lib/authMessages";
 
 const DEFAULT_APP_ORIGIN = "http://localhost:3000";
-
-export const INVITE_LOGIN_MESSAGE = "Zuerst einloggen oder registrieren, um Raum beizutreten.";
 
 export function buildInvitePath(roomId: number | string) {
   return `/invite/${roomId}`;
@@ -13,17 +11,12 @@ export function buildInviteUrl(roomId: number | string, origin = typeof window !
 }
 
 export function buildInviteAuthUrl(route: "/auth/login" | "/auth/register", roomId: number | string) {
-  const searchParams = new URLSearchParams({
-    m: INVITE_LOGIN_MESSAGE,
-    redirectTo: buildInvitePath(roomId),
-  });
-
-  return `${route}?${searchParams.toString()}`;
+  return buildAuthRedirectUrl(route, buildInvitePath(roomId), AUTH_LOGIN_REASONS.inviteJoin);
 }
 
-export function buildAuthRedirectUrl(route: "/auth/login" | "/auth/register", redirectTo: string, message = GENERIC_LOGIN_MESSAGE) {
+export function buildAuthRedirectUrl(route: "/auth/login" | "/auth/register", redirectTo: string, reason: AuthLoginReason = AUTH_LOGIN_REASONS.generic) {
   const searchParams = new URLSearchParams({
-    m: message,
+    reason,
     redirectTo,
   });
 
@@ -52,7 +45,6 @@ export function parseInviteRoomId(value: string) {
     const parsed = new URL(trimmed, DEFAULT_APP_ORIGIN);
     candidates.push(parsed.pathname, parsed.search);
   } catch {
-    // Ignore values that are not valid URLs and fall back to regex parsing.
   }
 
   for (const candidate of candidates) {

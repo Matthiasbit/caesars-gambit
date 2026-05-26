@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { buildAuthRedirectUrl } from "@/lib/invite";
-import { getAuthLoginMessage } from "@/lib/authMessages";
+import { getAuthLoginReason } from "@/lib/authMessages";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -24,10 +24,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       credentials: "include",
     }).then(res => {
       if (!res.ok) {
-        router.replace(buildAuthRedirectUrl("/auth/login", redirectTo, getAuthLoginMessage(redirectTo)));
+        router.replace(buildAuthRedirectUrl("/auth/login", redirectTo, getAuthLoginReason(redirectTo)));
       }
     }).catch(() => {
-      router.replace(buildAuthRedirectUrl("/auth/login", redirectTo, getAuthLoginMessage(redirectTo)));
+      router.replace(buildAuthRedirectUrl("/auth/login", redirectTo, getAuthLoginReason(redirectTo)));
     });
   }, [pathname, router]);
 

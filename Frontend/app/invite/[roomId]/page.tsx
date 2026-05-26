@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { joinRoom } from "@/components/api/joinRoom";
 import { useGetCurrentUser } from "@/components/api/getCurrentUser";
-import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { buildAuthRedirectUrl, buildInvitePath, INVITE_LOGIN_MESSAGE } from "@/lib/invite";
+import { buildAuthRedirectUrl, buildInvitePath } from "@/lib/invite";
+import { AUTH_LOGIN_REASONS } from "@/lib/authMessages";
 
 export default function InviteRoomPage() {
   const router = useRouter();
@@ -41,7 +41,7 @@ export default function InviteRoomPage() {
       } catch (error) {
         console.error("Invite join failed", error);
         joinAttemptedRef.current = false;
-        setJoinError("Der Invite konnte nicht eingelöst werden. Bitte versuche es erneut.");
+        setJoinError("Der Invite ist ungültig.");
       }
     };
 
@@ -54,7 +54,7 @@ export default function InviteRoomPage() {
     }
 
     const redirectTo = `${window.location.pathname}${window.location.search}`;
-    router.replace(buildAuthRedirectUrl("/auth/login", redirectTo, INVITE_LOGIN_MESSAGE));
+    router.replace(buildAuthRedirectUrl("/auth/login", redirectTo, AUTH_LOGIN_REASONS.inviteJoin));
   }, [currentUser.isLoading, currentUser.isSuccess, hasUser, parsedRoomId, router]);
 
   if (currentUser.isError) {

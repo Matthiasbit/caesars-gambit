@@ -10,7 +10,5 @@ export async function signOut(): Promise<void> {
     });
   } catch {
   }
-
 }
-
 export default signOut;
