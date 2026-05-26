@@ -1,3 +1,5 @@
+import { INVITE_LOGIN_MESSAGE } from "@/lib/invite";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export class ApiError extends Error {
@@ -27,7 +29,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (response.status === 403) {
     if (typeof window !== "undefined") {
       if (window.location.pathname !== "/") {
-        window.location.href = "/auth/login?m=Du+bist+nicht+angemeldet.+Bitte+logge+dich+ein+oder+registriere+dich+zuerst.";
+        const redirectTo = `${window.location.pathname}${window.location.search}`;
+        const params = new URLSearchParams({
+          m: INVITE_LOGIN_MESSAGE,
+          redirectTo,
+        });
+        window.location.href = `/auth/login?${params.toString()}`;
       }
     }
     throw new ApiError(

@@ -1,24 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/components/ui/item";
 import { SquareArrowOutUpRight } from "lucide-react";
+import { normalizeInternalRedirect } from "@/lib/invite";
 
 import packageJson from "@/package.json";
 
 const APP_VERSION = packageJson.version;
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = normalizeInternalRedirect(searchParams.get("redirectTo"));
+
+  useEffect(() => {
+    const queryMessage = searchParams.get("m");
+    if (queryMessage) {
+      setMessage(queryMessage);
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete("m");
+      router.replace(`${currentUrl.pathname}${currentUrl.search}`);
+    }
+  }, [searchParams, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +50,7 @@ export default function RegisterPage() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Register failed");
-      router.push("/");
+      router.push(redirectTo);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -81,6 +96,11 @@ export default function RegisterPage() {
 
         <section className="rounded-3xl border border-blue-500/10 bg-slate-900/25 p-6 shadow-2xl backdrop-blur-md sm:p-8">
           <Item className="w-full border-0 bg-transparent p-0 shadow-none">
+            {message && (
+              <div className="mb-4 rounded-md bg-yellow-100 p-4 text-yellow-800">
+                {message}
+              </div>
+            )}
             <form onSubmit={submit} className="flex w-full flex-col gap-4">
               <div>
                 <h3 className="text-2xl font-semibold">Register</h3>
@@ -116,7 +136,7 @@ export default function RegisterPage() {
                   type="button"
                   className="cursor-pointer sm:flex-1"
                   variant="ghost"
-                  onClick={() => router.push("/auth/login")}
+                  onClick={() => router.push(`/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`)}
                 >
                   <SquareArrowOutUpRight size={13} className="mr-2" /> Login
                 </Button>
@@ -133,5 +153,13 @@ export default function RegisterPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

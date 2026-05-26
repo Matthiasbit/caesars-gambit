@@ -5,6 +5,7 @@ import { Chat } from "./ui/chat";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { startGame } from "./api/startGame";
 import { EventsourceTypes } from "./hooks/useGameStream";
+import { buildInviteUrl } from "@/lib/invite";
 
 type LobbyProps = {
   roomId: string;
@@ -17,10 +18,10 @@ export function Lobby({ roomId, eventsource, router }: LobbyProps) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = buildInviteUrl(roomId);
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Risiko online", url });
+        await navigator.share({ title: "Caesar's Gambit Invite", url });
       } else {
         await navigator.clipboard.writeText(url);
         setCopied(true);
@@ -72,7 +73,7 @@ export function Lobby({ roomId, eventsource, router }: LobbyProps) {
             </Button>
 
             <Button variant="default" className="w-full" onClick={handleShare}>
-              {copied ? "Kopiert!" : "Raumlink kopieren"}
+              {copied ? "Kopiert!" : "Invite-Link kopieren"}
             </Button>
 
             <Button variant="destructive" className="w-full" onClick={handleLeaveRoom}>

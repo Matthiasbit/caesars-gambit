@@ -10,6 +10,7 @@ import signOut from "@/lib/auth";
 import { Github } from "lucide-react";
 import { useGetCurrentUser } from "@/components/api/getCurrentUser";
 import { Spinner } from "@/components/ui/spinner";
+import { parseInviteRoomId } from "@/lib/invite";
 
 import packageJson from "@/package.json";
 
@@ -25,22 +26,6 @@ export default function Home() {
   const [roomId, setRoomId] = useState("");
   const currentUser = useGetCurrentUser();
   const PAYPAL_LINK = "https://paypal.me/knoepsim/100";
-
-  function parseRoomId(value: string): number | null {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-
-    if (/^\d+$/.test(trimmed)) {
-      return Number(trimmed);
-    }
-
-    const match = trimmed.match(/\/room\/(\d+)/i);
-    if (match?.[1]) {
-      return Number(match[1]);
-    }
-
-    return null;
-  }
 
   const handleLogout = async () => {
     try {
@@ -170,8 +155,8 @@ export default function Home() {
                 ) : (
                   <div className="flex h-11 min-w-[260px] items-center gap-2 rounded-[10px] border border-slate-200 bg-white p-1.5 shadow-sm">
                     <input
-                      placeholder="Room ID oder Link"
-                      aria-label="Room ID"
+                      placeholder="Invite-Link oder Raum-ID"
+                      aria-label="Invite-Link oder Raum-ID"
                       value={roomId}
                       onChange={(e) => setRoomId(e.target.value)}
                       className="h-full flex-1 rounded-lg border-0 px-3 text-sm text-slate-800 outline-none"
@@ -182,9 +167,9 @@ export default function Home() {
                         type="button"
                         onClick={async () => {
                           setJoinError(null);
-                          const parsedRoomId = parseRoomId(roomId);
+                          const parsedRoomId = parseInviteRoomId(roomId);
                           if (parsedRoomId == null) {
-                            setJoinError("Ungültige Raum-ID oder Link.");
+                            setJoinError("Ungültiger Invite-Link oder Raum-ID.");
                             return;
                           }
 
@@ -199,9 +184,9 @@ export default function Home() {
                             setIsJoining(false);
                           }
                         }}
-                        disabled={parseRoomId(roomId) == null || isJoining}
+                        disabled={parseInviteRoomId(roomId) == null || isJoining}
                       >
-                        {isJoining ? "Beitreten..." : "Raum beitreten"}
+                          {isJoining ? "Beitreten..." : "Invite beitreten"}
                       </Button>
                       {joinError && <div className="text-sm text-red-400">{joinError}</div>}
                     </div>
@@ -247,8 +232,26 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col gap-3">
-                <Button variant="primary" size="lg" onClick={() => router.push("/auth/login")}>Login</Button>
-                <Button variant="secondary" size="lg" onClick={() => router.push("/auth/register")}>Registrieren</Button>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => {
+                    const redirectTo = `${window.location.pathname}${window.location.search}`;
+                    router.push(`/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+                  }}
+                >
+                  Login
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => {
+                    const redirectTo = `${window.location.pathname}${window.location.search}`;
+                    router.push(`/auth/register?redirectTo=${encodeURIComponent(redirectTo)}`);
+                  }}
+                >
+                  Registrieren
+                </Button>
               </div>
             </section>
           </>

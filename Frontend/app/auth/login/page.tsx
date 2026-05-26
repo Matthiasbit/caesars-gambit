@@ -1,13 +1,14 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/components/ui/item";
 import { SquareArrowOutUpRight } from "lucide-react";
+import { normalizeInternalRedirect } from "@/lib/invite";
 
 import packageJson from "@/package.json";
 
@@ -19,7 +20,9 @@ function LoginForm() {
   const [err, setErr] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null); 
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const redirectTo = normalizeInternalRedirect(searchParams.get("redirectTo"));
 
   useEffect(() => {
     const queryMessage = searchParams.get("m");
@@ -27,9 +30,9 @@ function LoginForm() {
       setMessage(queryMessage); 
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.delete("m");
-      router.replace(currentUrl.toString()); 
+      router.replace(`${currentUrl.pathname}${currentUrl.search}`);
     }
-  }, [searchParams, router]);
+  }, [pathname, searchParams, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +49,7 @@ function LoginForm() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
-      router.push("/");
+      router.push(redirectTo);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -125,7 +128,7 @@ function LoginForm() {
                   type="button"
                   className="cursor-pointer sm:flex-1"
                   variant="ghost"
-                  onClick={() => router.push("/auth/register")}
+                  onClick={() => router.push(`/auth/register?redirectTo=${encodeURIComponent(redirectTo)}`)}
                 >
                   <SquareArrowOutUpRight size={13} className="mr-2" /> Register
                 </Button>
