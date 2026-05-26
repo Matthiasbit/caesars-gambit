@@ -14,7 +14,7 @@ Ein modernes, webbasiertes Strategiespiel inspiriert von Risiko, entwickelt mit 
 ## 🚀 Technologie-Stack
 
 ### Frontend
-- **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
+- **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
 - **Sprache:** TypeScript
 - **Styling:** TailwindCSS
 - **State Management:** React Query (TanStack Query)
@@ -68,10 +68,10 @@ Die produktive Umgebung auf `caesars-gambit.knoep.de` wird durch **Portainer** u
 - **Auto-Update:** Sobald GitHub Actions ein neues Image mit dem Tag `:latest` pusht, erkennt Watchtower die Änderung, zieht das neue Image und startet die betroffenen Container (Backend & Frontend) automatisch neu.
 
 ### Deployment-Übersicht
-| Komponente | URL | Image |
-| :--- | :--- | :--- |
-| **Frontend** | [caesars-gambit.knoep.de](https://caesars-gambit.knoep.de) | `ghcr.io/.../caesars-gambit-frontend:latest` |
-| **Backend API** | [cg-api.knoep.de](https://cg-api.knoep.de) | `ghcr.io/.../caesars-gambit-backend:latest` |
+| Komponente      | URL                                                        | Image                                                             |
+| :-------------- | :--------------------------------------------------------- | :---------------------------------------------------------------- |
+| **Frontend**    | [caesars-gambit.knoep.de](https://caesars-gambit.knoep.de) | `ghcr.io/dhbw-softwareengineering/caesars-gambit-frontend:latest` |
+| **Backend API** | [cg-api.knoep.de](https://cg-api.knoep.de)                 | `ghcr.io/dhbw-softwareengineering/caesars-gambit-backend:latest`  |
 
 ---
 
