@@ -12,8 +12,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        HttpStatus status = "Username exists".equals(ex.getMessage())
+            ? HttpStatus.CONFLICT
+            : HttpStatus.BAD_REQUEST;
+
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+            .status(status)
                 .body(Map.of("error", ex.getMessage()));
     }
 
