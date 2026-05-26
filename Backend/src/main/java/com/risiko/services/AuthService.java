@@ -42,24 +42,6 @@ public class AuthService {
         if (!passwordEncoder.matches(password, u.getPassword())) throw new RuntimeException("Invalid credentials");
         return jwtUtil.generateToken(u.getEmail(), u.getId());
     }
-
-    @Transactional
-    public User updateUsername(String username) {
-        String normalizedUsername = username == null ? "" : username.trim();
-
-        if (normalizedUsername.isBlank()) {
-            throw new IllegalArgumentException("Username must not be blank");
-        }
-
-        User user = getUserFromAuth();
-
-        if (!normalizedUsername.equals(user.getUsername()) && userRepository.existsByUsername(normalizedUsername)) {
-            throw new IllegalArgumentException("Username exists");
-        }
-
-        user.setUsername(normalizedUsername);
-        return userRepository.save(user);
-    }
       
     public User getUserFromAuth() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
