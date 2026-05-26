@@ -2,7 +2,7 @@
 
 [![CI/CD](https://github.com/dhbw-softwareengineering/caesars-gambit/actions/workflows/dockerbuild.yml/badge.svg)](https://github.com/dhbw-softwareengineering/caesars-gambit/actions/workflows/dockerbuild.yml)
 ![Java](https://img.shields.io/badge/Java-25-orange.svg)
-![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)
 
 Ein modernes, webbasiertes Strategiespiel inspiriert von Risiko, entwickelt mit einer robusten Fullstack-Architektur und einer automatisierten Deployment-Pipeline.
@@ -41,7 +41,7 @@ Voraussetzung: **Docker** und **Docker Compose**.
 
 2.  **Infrastruktur starten:**
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
     - **Frontend:** [http://localhost:3000](http://localhost:3000)
     - **Backend API:** [http://localhost:8080](http://localhost:8080)
