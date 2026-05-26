@@ -1,6 +1,6 @@
 # 🏛️ Caesar's Gambit
 
-[![CI/CD](https://github.com/dhbw-softwareengineering/caesars-gambit/actions/workflows/dockerbuild.yml/badge.svg)](https://github.com/dhbw-softwareengineering/caesars-gambit/actions/workflows/dockerbuild.yml)
+[![CI/CD](https://github.com/dhbw-softwareengineering/caesars-gambit/actions/workflows/dockerbuild.yml/badge.svg?query=branch%3Amain)](https://github.com/dhbw-softwareengineering/caesars-gambit/actions/workflows/dockerbuild.yml?query=branch%3Amain)
 ![Java](https://img.shields.io/badge/Java-25-orange.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)
