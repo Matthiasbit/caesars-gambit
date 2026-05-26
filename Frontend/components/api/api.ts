@@ -66,3 +66,10 @@ export function postJson<T>(path: string, body?: unknown) {
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
+
+export function putJson<T>(path: string, body?: unknown) {
+  return apiFetch<T>(path, {
+    method: "PUT",
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}

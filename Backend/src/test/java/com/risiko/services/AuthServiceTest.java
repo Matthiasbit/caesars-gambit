@@ -148,6 +148,57 @@ class AuthServiceTest {
     }
 
     @Nested
+    class UpdateUsername {
+
+        @Test
+        void leererUsername_wirftException() {
+            assertThatThrownBy(() -> authService.updateUsername("   "))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Username must not be blank");
+        }
+
+        @Test
+        void bereitsVergebenerUsername_wirftException() {
+            Authentication auth = mock(Authentication.class);
+            when(auth.isAuthenticated()).thenReturn(true);
+            when(auth.getName()).thenReturn("test@example.com");
+            SecurityContext ctx = SecurityContextHolder.createEmptyContext();
+            ctx.setAuthentication(auth);
+            SecurityContextHolder.setContext(ctx);
+
+            User currentUser = new User();
+            currentUser.setEmail("test@example.com");
+            currentUser.setUsername("oldname");
+            when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(currentUser));
+            when(userRepository.existsByUsername("takenname")).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.updateUsername("takenname"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Username exists");
+        }
+
+        @Test
+        void erfolgreicherWechsel_speichertUsername() {
+            Authentication auth = mock(Authentication.class);
+            when(auth.isAuthenticated()).thenReturn(true);
+            when(auth.getName()).thenReturn("test@example.com");
+            SecurityContext ctx = SecurityContextHolder.createEmptyContext();
+            ctx.setAuthentication(auth);
+            SecurityContextHolder.setContext(ctx);
+
+            User currentUser = new User();
+            currentUser.setEmail("test@example.com");
+            currentUser.setUsername("oldname");
+            when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(currentUser));
+            when(userRepository.save(currentUser)).thenAnswer(invocation -> invocation.getArgument(0));
+
+            User updated = authService.updateUsername("newname");
+
+            assertThat(updated.getUsername()).isEqualTo("newname");
+        }
+    }
+
+    @Nested
     class GetUserFromAuth {
 
         @Test
