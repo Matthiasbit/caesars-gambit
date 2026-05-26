@@ -36,7 +36,7 @@ public class GameController {
               
         Room room = roomService.getRoomById(Integer.parseInt(roomId));
         if (room == null) {
-            throw new NotFoundException("Room not found");
+            throw new NotFoundException("Raum nicht gefunden.");
         }
 
         SseEmitter emitter = new SseEmitter(0L);
@@ -44,7 +44,7 @@ public class GameController {
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
             .findFirst()
-            .orElseThrow(() -> new NotFoundException("Player not found in room"));
+            .orElseThrow(() -> new NotFoundException("Spieler nicht im Raum gefunden."));
 
         player.setEmitter(emitter);
         emitter.onCompletion(() -> player.setEmitter(null));
@@ -68,7 +68,8 @@ public class GameController {
         Object roomIdObj = request.get("roomId");
         if (roomIdObj == null) throw new IllegalArgumentException("roomId fehlt.");
         Room room = roomService.getRoomById(Integer.parseInt(roomIdObj.toString()));
-        if (room == null) throw new NotFoundException("Room not found");
+        if (room == null) throw new NotFoundException("Raum nicht gefunden.");
+        if (room.getGamestate() == null) throw new IllegalStateException("Das Spiel wurde noch nicht gestartet.");
         Object fromObj = request.get("from");
         Object toObj = request.get("to");
         Object sumObj = request.get("sum");
@@ -108,7 +109,8 @@ public class GameController {
         Object roomIdObj = request.get("roomId");
         if (roomIdObj == null) throw new IllegalArgumentException("roomId fehlt.");
         Room room = roomService.getRoomById(Integer.parseInt(roomIdObj.toString()));
-        if (room == null) throw new NotFoundException("Room not found");
+        if (room == null) throw new NotFoundException("Raum nicht gefunden.");
+        if (room.getGamestate() == null) throw new IllegalStateException("Das Spiel wurde noch nicht gestartet.");
         Object fromObj = request.get("from");
         Object toObj = request.get("to");
         Object sumObj = request.get("sum");
@@ -123,7 +125,9 @@ public class GameController {
         Territorries from = Territorries.getTerritorryByDisplayName((String) fromObj);
         Territorries to = Territorries.getTerritorryByDisplayName((String) toObj);
         if (from == null || to == null) throw new IllegalArgumentException("Unbekanntes Gebiet.");
-        room.getGamestate().attack(from, to, ((Number) sumObj).intValue());
+        int sumAttack = ((Number) sumObj).intValue();
+        if (sumAttack <= 0) throw new IllegalArgumentException("Die Anzahl der angreifenden Truppen muss positiv sein.");
+        room.getGamestate().attack(from, to, sumAttack);
         room.getGamestate().sendGameStateUpdate();
     }
 
@@ -132,13 +136,16 @@ public class GameController {
         Object roomIdObj = request.get("roomId");
         if (roomIdObj == null) throw new IllegalArgumentException("roomId fehlt.");
         Room room = roomService.getRoomById(Integer.parseInt(roomIdObj.toString()));
-        if (room == null) throw new NotFoundException("Room not found");
+        if (room == null) throw new NotFoundException("Raum nicht gefunden.");
+        if (room.getGamestate() == null) throw new IllegalStateException("Das Spiel wurde noch nicht gestartet.");
         Object toObj = request.get("to");
         Object sumObj = request.get("sum");
         if (toObj == null || sumObj == null) throw new IllegalArgumentException("to und sum sind erforderlich.");
         User caller = authService.getUserFromAuth();
+        Player current = room.getGamestate().getCurrentPlayer();
+        if (current.getUserId() != caller.getId()) throw new ForbiddenException("Nicht dein Zug.");
         Player player = room.getGamestate().getPlayerByUserId(caller.getId());
-        if (player == null) throw new NotFoundException("Player not found in room");
+        if (player == null) throw new NotFoundException("Spieler nicht im Raum gefunden.");
         Territorries to = Territorries.getTerritorryByDisplayName((String) toObj);
         if (to == null) throw new IllegalArgumentException("Unbekanntes Gebiet.");
         player.distTroops(to, ((Number) sumObj).intValue());
@@ -150,7 +157,8 @@ public class GameController {
         Object roomIdObj = request.get("roomId");
         if (roomIdObj == null) throw new IllegalArgumentException("roomId fehlt.");
         Room room = roomService.getRoomById(Integer.parseInt(roomIdObj.toString()));
-        if (room == null) throw new NotFoundException("Room not found");
+        if (room == null) throw new NotFoundException("Raum nicht gefunden.");
+        if (room.getGamestate() == null) throw new IllegalStateException("Das Spiel wurde noch nicht gestartet.");
         User caller = authService.getUserFromAuth();
         Player current = room.getGamestate().getCurrentPlayer();
         if (current.getUserId() != caller.getId()) {

@@ -67,6 +67,9 @@ class GameControllerTest {
 
         @Test
         void gueltigeAnfrage_fuehrtMoveTroopsAus() throws Exception {
+            User user = new User();
+            user.setId(0L);
+            when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
             when(gamestate.getCurrentPlayer()).thenReturn(player);
@@ -88,6 +91,9 @@ class GameControllerTest {
 
         @Test
         void quellgebietNichtImBesitz_wirft400() throws Exception {
+            User user = new User();
+            user.setId(0L);
+            when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
             when(gamestate.getCurrentPlayer()).thenReturn(player);
@@ -102,6 +108,9 @@ class GameControllerTest {
 
         @Test
         void zielgebietNichtImBesitz_wirft400() throws Exception {
+            User user = new User();
+            user.setId(0L);
+            when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
             when(gamestate.getCurrentPlayer()).thenReturn(player);
@@ -117,6 +126,9 @@ class GameControllerTest {
 
         @Test
         void gebieteNichtBenachbart_wirft400() throws Exception {
+            User user = new User();
+            user.setId(0L);
+            when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
             when(gamestate.getCurrentPlayer()).thenReturn(player);
@@ -132,6 +144,9 @@ class GameControllerTest {
 
         @Test
         void nichtGenugTruppen_wirft400() throws Exception {
+            User user = new User();
+            user.setId(0L);
+            when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
             when(gamestate.getCurrentPlayer()).thenReturn(player);
@@ -165,8 +180,12 @@ class GameControllerTest {
 
         @Test
         void gueltigeAnfrage_fuehrtAttackAus() throws Exception {
+            User user = new User();
+            user.setId(0L);
+            when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
+            when(gamestate.getCurrentPlayer()).thenReturn(player);
 
             mockMvc.perform(post("/api/game/attack")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -200,6 +219,8 @@ class GameControllerTest {
             when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.getRoomById(1)).thenReturn(room);
             when(room.getGamestate()).thenReturn(gamestate);
+            when(gamestate.getCurrentPlayer()).thenReturn(player);
+            when(player.getUserId()).thenReturn(7L);
             when(gamestate.getPlayerByUserId(7L)).thenReturn(player);
 
             mockMvc.perform(post("/api/game/distTroops")
