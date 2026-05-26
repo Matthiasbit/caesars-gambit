@@ -133,6 +133,6 @@ export default function InviteRoomPage() {
       </div>
     );
   }
-
+ 
   return null;
 }
