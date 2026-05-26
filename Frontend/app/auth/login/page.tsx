@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/components/ui/item";
 import { SquareArrowOutUpRight } from "lucide-react";
+import { AUTH_LOGIN_REASONS, getAuthLoginMessage } from "@/lib/authMessages";
+import { normalizeInternalRedirect } from "@/lib/invite";
 
 import packageJson from "@/package.json";
 
@@ -20,14 +22,15 @@ function LoginForm() {
   const [message, setMessage] = useState<string | null>(null); 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const redirectTo = normalizeInternalRedirect(searchParams.get("redirectTo"));
 
   useEffect(() => {
-    const queryMessage = searchParams.get("m");
-    if (queryMessage) {
-      setMessage(queryMessage); 
+    const reason = searchParams.get("reason");
+    if (reason === AUTH_LOGIN_REASONS.inviteJoin || reason === AUTH_LOGIN_REASONS.generic) {
+      setMessage(getAuthLoginMessage(reason)); 
       const currentUrl = new URL(window.location.href);
-      currentUrl.searchParams.delete("m");
-      router.replace(currentUrl.toString()); 
+      currentUrl.searchParams.delete("reason");
+      router.replace(`${currentUrl.pathname}${currentUrl.search}`);
     }
   }, [searchParams, router]);
 
@@ -46,7 +49,7 @@ function LoginForm() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
-      router.push("/");
+      router.push(redirectTo);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -125,7 +128,7 @@ function LoginForm() {
                   type="button"
                   className="cursor-pointer sm:flex-1"
                   variant="ghost"
-                  onClick={() => router.push("/auth/register")}
+                  onClick={() => router.push(`/auth/register?redirectTo=${encodeURIComponent(redirectTo)}`)}
                 >
                   <SquareArrowOutUpRight size={13} className="mr-2" /> Register
                 </Button>

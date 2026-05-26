@@ -1,3 +1,6 @@
+import { buildAuthRedirectUrl } from "@/lib/invite";
+import { getAuthLoginReason } from "@/lib/authMessages";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export class ApiError extends Error {
@@ -27,7 +30,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (response.status === 403) {
     if (typeof window !== "undefined") {
       if (window.location.pathname !== "/") {
-        window.location.href = "/auth/login?m=Du+bist+nicht+angemeldet.+Bitte+logge+dich+ein+oder+registriere+dich+zuerst.";
+        const redirectTo = `${window.location.pathname}${window.location.search}`;
+        window.location.href = buildAuthRedirectUrl(
+          "/auth/login",
+          redirectTo,
+          getAuthLoginReason(redirectTo)
+        );
       }
     }
     throw new ApiError(
