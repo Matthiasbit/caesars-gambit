@@ -1,6 +1,8 @@
+import { GENERIC_LOGIN_MESSAGE } from "@/lib/authMessages";
+
 const DEFAULT_APP_ORIGIN = "http://localhost:3000";
 
-export const INVITE_LOGIN_MESSAGE = "Du bist nicht angemeldet. Bitte logge dich ein oder registriere dich zuerst.";
+export const INVITE_LOGIN_MESSAGE = "Zuerst einloggen oder registrieren, um Raum beizutreten.";
 
 export function buildInvitePath(roomId: number | string) {
   return `/invite/${roomId}`;
@@ -19,7 +21,7 @@ export function buildInviteAuthUrl(route: "/auth/login" | "/auth/register", room
   return `${route}?${searchParams.toString()}`;
 }
 
-export function buildAuthRedirectUrl(route: "/auth/login" | "/auth/register", redirectTo: string, message = INVITE_LOGIN_MESSAGE) {
+export function buildAuthRedirectUrl(route: "/auth/login" | "/auth/register", redirectTo: string, message = GENERIC_LOGIN_MESSAGE) {
   const searchParams = new URLSearchParams({
     m: message,
     redirectTo,

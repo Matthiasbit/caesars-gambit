@@ -1,4 +1,5 @@
-import { INVITE_LOGIN_MESSAGE } from "@/lib/invite";
+import { buildAuthRedirectUrl } from "@/lib/invite";
+import { getAuthLoginMessage } from "@/lib/authMessages";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -30,11 +31,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     if (typeof window !== "undefined") {
       if (window.location.pathname !== "/") {
         const redirectTo = `${window.location.pathname}${window.location.search}`;
-        const params = new URLSearchParams({
-          m: INVITE_LOGIN_MESSAGE,
+        window.location.href = buildAuthRedirectUrl(
+          "/auth/login",
           redirectTo,
-        });
-        window.location.href = `/auth/login?${params.toString()}`;
+          getAuthLoginMessage(redirectTo)
+        );
       }
     }
     throw new ApiError(
