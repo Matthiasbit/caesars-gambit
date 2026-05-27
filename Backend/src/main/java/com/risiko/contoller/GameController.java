@@ -67,6 +67,13 @@ public class GameController {
         if (room == null) {
             throw new RuntimeException("Room not found");
         }
+        Player player = room.getPlayers().stream()
+            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+        if (player != room.getGamestate().getCurrentPlayer()) {
+            throw new IllegalStateException("It's not the current player's turn");
+        }
         Territorries from = Territorries.getTerritorryByDisplayName((String) request.get("from"));
         Territorries to = Territorries.getTerritorryByDisplayName((String) request.get("to"));
         int sum = ((Number) request.get("sum")).intValue();
@@ -96,6 +103,13 @@ public class GameController {
         if (room == null) {
             throw new RuntimeException("Room not found");
         }
+        Player player = room.getPlayers().stream()
+            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+        if (player != room.getGamestate().getCurrentPlayer()) {
+            throw new IllegalStateException("It's not the current player's turn");
+        }
         room.getGamestate().attack(Territorries.getTerritorryByDisplayName((String) request.get("from")), Territorries.getTerritorryByDisplayName((String) request.get("to")), (Integer) request.get("sum"));
         room.getGamestate().sendGameStateUpdate();
     }
@@ -117,6 +131,13 @@ public class GameController {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
         if (room == null) {
             throw new RuntimeException("Room not found");
+        }
+        Player player = room.getPlayers().stream()
+            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+        if (player != room.getGamestate().getCurrentPlayer()) {
+            throw new IllegalStateException("It's not the current player's turn");
         }
         room.getGamestate().endMove();
         room.getGamestate().sendGameStateUpdate();
