@@ -28,6 +28,9 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import com.risiko.exception.AppException;
+import org.springframework.http.HttpStatus;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,11 +81,6 @@ class GameControllerTest {
         void gueltigeAnfrage_fuehrtMoveTroopsAus() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.LATERANO)).thenReturn(true);
-            Map<Territorries, Integer> territories = new HashMap<>();
-            territories.put(Territorries.PALATIN, 5);
-            when(player.getTerritories()).thenReturn(territories);
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -90,12 +88,12 @@ class GameControllerTest {
                             Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 3))))
                     .andExpect(status().isOk());
 
-            verify(player).moveTroops(any(), any(), eq(3));
+            verify(player).moveTroops(Territorries.PALATIN, Territorries.LATERANO, 3);
             verify(gamestate).sendGameStateUpdate();
         }
 
         @Test
-        void nichtAktuellerSpieler_wirft404() throws Exception {
+        void nichtAktuellerSpieler_wirft403() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
             Player otherPlayer = mock(Player.class);
@@ -107,14 +105,15 @@ class GameControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
                             Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 3))))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isForbidden());
         }
 
         @Test
         void quellgebietNichtImBesitz_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(false);
+            doThrow(new IllegalArgumentException("Das Quellgebiet geh\u00f6rt nicht dem aktuellen Spieler."))
+                    .when(player).moveTroops(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -127,8 +126,8 @@ class GameControllerTest {
         void zielgebietNichtImBesitz_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.LATERANO)).thenReturn(false);
+            doThrow(new IllegalArgumentException("Das Zielgebiet geh\u00f6rt nicht dem aktuellen Spieler."))
+                    .when(player).moveTroops(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -141,8 +140,8 @@ class GameControllerTest {
         void gebieteNichtBenachbart_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.EICHENWALD)).thenReturn(true);
+            doThrow(new IllegalArgumentException("Die Gebiete sind nicht benachbart."))
+                    .when(player).moveTroops(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -155,11 +154,8 @@ class GameControllerTest {
         void nichtGenugTruppen_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.LATERANO)).thenReturn(true);
-            Map<Territorries, Integer> territories = new HashMap<>();
-            territories.put(Territorries.PALATIN, 2);
-            when(player.getTerritories()).thenReturn(territories);
+            doThrow(new IllegalArgumentException("Nicht genug Truppen zum Verschieben."))
+                    .when(player).moveTroops(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -170,7 +166,7 @@ class GameControllerTest {
 
         @Test
         void raumNichtGefunden_wirft404() throws Exception {
-            when(roomService.getRoomById(99)).thenReturn(null);
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -199,7 +195,7 @@ class GameControllerTest {
         }
 
         @Test
-        void nichtAktuellerSpieler_wirft404() throws Exception {
+        void nichtAktuellerSpieler_wirft403() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
             Player otherPlayer = mock(Player.class);
@@ -211,12 +207,68 @@ class GameControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
                             Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 2))))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void angriffsgebietNichtImBesitz_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            doThrow(new IllegalArgumentException("Das Angriffsgebiet geh\u00f6rt nicht dem aktuellen Spieler."))
+                    .when(gamestate).attack(any(), any(), anyInt());
+
+            mockMvc.perform(post("/api/game/attack")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 2))))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void zielgebietGehoertBereitsAngreifer_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            doThrow(new IllegalArgumentException("Das Zielgebiet geh\u00f6rt bereits dem angreifenden Spieler."))
+                    .when(gamestate).attack(any(), any(), anyInt());
+
+            mockMvc.perform(post("/api/game/attack")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 2))))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void gebieteNichtBenachbart_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            doThrow(new IllegalArgumentException("Die Gebiete sind nicht benachbart."))
+                    .when(gamestate).attack(any(), any(), anyInt());
+
+            mockMvc.perform(post("/api/game/attack")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", 1, "from", "Palatin", "to", "Eichenwald", "sum", 2))))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void nichtGenugTruppen_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            doThrow(new IllegalArgumentException("Nicht genug Truppen f\u00fcr diesen Angriff."))
+                    .when(gamestate).attack(any(), any(), anyInt());
+
+            mockMvc.perform(post("/api/game/attack")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 2))))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
         void raumNichtGefunden_wirft404() throws Exception {
-            when(roomService.getRoomById(99)).thenReturn(null);
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
 
             mockMvc.perform(post("/api/game/attack")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -254,7 +306,7 @@ class GameControllerTest {
 
         @Test
         void raumNichtGefunden_wirft404() throws Exception {
-            when(roomService.getRoomById(99)).thenReturn(null);
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
 
             mockMvc.perform(get("/api/game/stream/99"))
                     .andExpect(status().isNotFound());

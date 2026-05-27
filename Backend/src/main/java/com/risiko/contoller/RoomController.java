@@ -1,17 +1,17 @@
 package com.risiko.contoller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import com.risiko.exception.AppException;
 import com.risiko.model.Room;
 import com.risiko.repository.UserRepository;
 import com.risiko.services.AuthService;
 import com.risiko.services.RoomService;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -44,14 +44,14 @@ public class RoomController {
             else host = Boolean.parseBoolean(hostObj.toString());
         }
         if (!roomService.joinRoom(roomId, authService.getUserFromAuth().getId(), host)) {
-            throw new RuntimeException("Room not found");
+            throw new AppException(HttpStatus.NOT_FOUND, "Room not found");
         }
     }
     
     @PostMapping("/leave/{roomId}")
      public void leaveRoom(@PathVariable("roomId") int roomId) {
         if (!roomService.leaveRoom(roomId, authService.getUserFromAuth().getId())) {
-            throw new RuntimeException("Room not found");
+            throw new AppException(HttpStatus.NOT_FOUND, "Room not found");
         }
     }
 
@@ -62,12 +62,8 @@ public class RoomController {
     }
 
     @PostMapping("/start/{roomId}")
-    public ResponseEntity<?> startGame(@PathVariable("roomId") int roomId, HttpServletRequest request) {
-        try {
-            roomService.startGame(roomId);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(501).body(e.getMessage());
-        }
+    public ResponseEntity<?> startGame(@PathVariable("roomId") int roomId) {
+        roomService.startGame(roomId);
         return ResponseEntity.ok().build();
     }
 

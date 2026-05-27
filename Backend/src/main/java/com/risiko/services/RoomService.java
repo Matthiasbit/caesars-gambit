@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.risiko.contoller.GameController;
+import com.risiko.exception.AppException;
 import com.risiko.model.Room;
 import com.risiko.repository.UserRepository;
 
@@ -52,7 +54,9 @@ public class RoomService {
     }
 
     public Room getRoomById(int id) {
-        return rooms.get(id);
+        Room room = rooms.get(id);
+        if (room == null) throw new AppException(HttpStatus.NOT_FOUND, "Room not found");
+        return room;
     }
 
     public void removeRoom(int id) {
@@ -67,11 +71,6 @@ public class RoomService {
     }
 
     public void startGame(int roomId) {
-        Room room = rooms.get(roomId);
-        if (room != null) {
-            room.startGame();
-        } else {
-            throw new RuntimeException("Room not found");
-        }
+        getRoomById(roomId).startGame();
     }
 }

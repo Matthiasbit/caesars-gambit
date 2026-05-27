@@ -1,6 +1,7 @@
 package com.risiko.model;
 
 import com.risiko.contoller.GameController;
+import com.risiko.exception.AppException;
 import com.risiko.model.dto.LobbyPlayerDto;
 import com.risiko.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,7 +145,7 @@ class RoomTest {
             ReflectionTestUtils.setField(room, "gameStarted", true);
 
             assertThatThrownBy(() -> room.startGame())
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(AppException.class)
                     .hasMessage("Game already started");
         }
     }

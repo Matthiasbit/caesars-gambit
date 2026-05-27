@@ -1,6 +1,8 @@
 package com.risiko.contoller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.risiko.exception.AppException;
+import com.risiko.exception.GlobalExceptionHandler;
 import com.risiko.model.Room;
 import com.risiko.model.User;
 import com.risiko.services.AuthService;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,8 +22,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -46,7 +47,9 @@ class RoomControllerTest {
     void setUp() {
         roomController = new RoomController(gameController, null, authService);
         ReflectionTestUtils.setField(roomController, "roomService", roomService);
-        mockMvc = MockMvcBuilders.standaloneSetup(roomController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(roomController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Nested
@@ -81,19 +84,17 @@ class RoomControllerTest {
         }
 
         @Test
-        void raumNichtGefunden_wirftException() {
+        void raumNichtGefunden_wirft404() throws Exception {
             User user = new User();
             user.setId(1L);
             when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.joinRoom(anyInt(), anyLong(), anyBoolean())).thenReturn(false);
 
-            Exception thrown = assertThrows(Exception.class, () ->
-                    mockMvc.perform(post("/api/rooms/join/99")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}")));
-
-            assertThat(thrown.getCause()).isInstanceOf(RuntimeException.class)
-                    .hasMessage("Room not found");
+            mockMvc.perform(post("/api/rooms/join/99")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error").value("Room not found"));
         }
 
         @Test
@@ -127,17 +128,15 @@ class RoomControllerTest {
         }
 
         @Test
-        void raumNichtGefunden_wirftException() {
+        void raumNichtGefunden_wirft404() throws Exception {
             User user = new User();
             user.setId(1L);
             when(authService.getUserFromAuth()).thenReturn(user);
             when(roomService.leaveRoom(anyInt(), anyLong())).thenReturn(false);
 
-            Exception thrown = assertThrows(Exception.class, () ->
-                    mockMvc.perform(post("/api/rooms/leave/99")));
-
-            assertThat(thrown.getCause()).isInstanceOf(RuntimeException.class)
-                    .hasMessage("Room not found");
+            mockMvc.perform(post("/api/rooms/leave/99"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error").value("Room not found"));
         }
     }
 
@@ -159,20 +158,18 @@ class RoomControllerTest {
         }
 
         @Test
-        void userNichtImRaum_wirftException() {
+        void userNichtImRaum_wirft400() throws Exception {
             User user = new User();
             user.setId(1L);
             when(authService.getUserFromAuth()).thenReturn(user);
             doThrow(new IllegalArgumentException("User not in room"))
                     .when(roomService).sendMessage(anyInt(), anyLong(), anyString());
 
-            Exception thrown = assertThrows(Exception.class, () ->
-                    mockMvc.perform(post("/api/rooms/message/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(Map.of("message", "Hello")))));
-
-            assertThat(thrown.getCause()).isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("User not in room");
+            mockMvc.perform(post("/api/rooms/message/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(Map.of("message", "Hello"))))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error").value("User not in room"));
         }
     }
 
@@ -188,12 +185,12 @@ class RoomControllerTest {
         }
 
         @Test
-        void fehler_gibt501Zurueck() throws Exception {
-            doThrow(new RuntimeException("Not enough players")).when(roomService).startGame(1);
+        void fehler_gibt409Zurueck() throws Exception {
+            doThrow(new AppException(HttpStatus.CONFLICT, "Game already started")).when(roomService).startGame(1);
 
             mockMvc.perform(post("/api/rooms/start/1"))
-                    .andExpect(status().is(501))
-                    .andExpect(content().string("Not enough players"));
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.error").value("Game already started"));
         }
     }
 

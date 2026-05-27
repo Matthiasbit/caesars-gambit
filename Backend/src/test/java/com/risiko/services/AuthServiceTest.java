@@ -1,5 +1,6 @@
 package com.risiko.services;
 
+import com.risiko.exception.AppException;
 import com.risiko.model.User;
 import com.risiko.repository.UserRepository;
 import com.risiko.security.JwtUtil;
@@ -173,7 +174,7 @@ class AuthServiceTest {
             when(userRepository.existsByUsername("takenname")).thenReturn(true);
 
             assertThatThrownBy(() -> authService.updateUsername("takenname"))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(AppException.class)
                     .hasMessage("Username exists");
         }
 
