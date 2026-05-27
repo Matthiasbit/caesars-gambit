@@ -71,11 +71,6 @@ public class RoomService {
     }
 
     public void startGame(int roomId) {
-        Room room = rooms.get(roomId);
-        if (room != null) {
-            room.startGame();
-        } else {
-            throw new AppException(HttpStatus.NOT_FOUND, "Room not found");
-        }
+        getRoomById(roomId).startGame();
     }
 }

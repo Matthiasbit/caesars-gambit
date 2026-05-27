@@ -81,11 +81,6 @@ class GameControllerTest {
         void gueltigeAnfrage_fuehrtMoveTroopsAus() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.LATERANO)).thenReturn(true);
-            Map<Territorries, Integer> territories = new HashMap<>();
-            territories.put(Territorries.PALATIN, 5);
-            when(player.getTerritories()).thenReturn(territories);
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -93,7 +88,7 @@ class GameControllerTest {
                             Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 3))))
                     .andExpect(status().isOk());
 
-            verify(player).moveTroops(any(), any(), eq(3));
+            verify(gamestate).move(Territorries.PALATIN, Territorries.LATERANO, 3);
             verify(gamestate).sendGameStateUpdate();
         }
 
@@ -117,7 +112,8 @@ class GameControllerTest {
         void quellgebietNichtImBesitz_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(false);
+            doThrow(new IllegalArgumentException("Das Quellgebiet geh\u00f6rt nicht dem aktuellen Spieler."))
+                    .when(gamestate).move(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -130,8 +126,8 @@ class GameControllerTest {
         void zielgebietNichtImBesitz_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.LATERANO)).thenReturn(false);
+            doThrow(new IllegalArgumentException("Das Zielgebiet geh\u00f6rt nicht dem aktuellen Spieler."))
+                    .when(gamestate).move(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -144,8 +140,8 @@ class GameControllerTest {
         void gebieteNichtBenachbart_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.EICHENWALD)).thenReturn(true);
+            doThrow(new IllegalArgumentException("Die Gebiete sind nicht benachbart."))
+                    .when(gamestate).move(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -158,11 +154,8 @@ class GameControllerTest {
         void nichtGenugTruppen_wirft400() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
-            when(player.hasTerritory(Territorries.LATERANO)).thenReturn(true);
-            Map<Territorries, Integer> territories = new HashMap<>();
-            territories.put(Territorries.PALATIN, 2);
-            when(player.getTerritories()).thenReturn(territories);
+            doThrow(new IllegalArgumentException("Nicht genug Truppen zum Verschieben."))
+                    .when(gamestate).move(any(), any(), anyInt());
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
