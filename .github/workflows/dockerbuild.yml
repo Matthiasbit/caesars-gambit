@@ -33,101 +33,152 @@ jobs:
 
   # ── CI: Validierung bei jedem Push und PR ──────────────────────────────────
   test-backend:
-    name: Backend - Compile & Test
+    name: CI | Backend - Test & Scan
     needs: changes
     if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java 25 (Temurin)
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
           cache: maven
 
-      - name: Build and test backend
+      - name: CI | Backend - Maven Verify
         working-directory: ./Backend
         run: mvn -B verify
 
+      - name: CI | Backend - Trivy Dependency Scan (FS)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: './Backend'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
   test-frontend:
-    name: Frontend - Build, Test & Lint
+    name: CI | Frontend - Test & Scan
     needs: changes
     if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10.33.4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
         with:
           node-version: '22.13.x'
           cache: pnpm
           cache-dependency-path: Frontend/pnpm-lock.yaml
 
-      - name: Install dependencies
+      - name: CI | Frontend - Install dependencies
         working-directory: ./Frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Lint frontend
+      - name: CI | Frontend - Lint
         working-directory: ./Frontend
         run: pnpm lint
 
-      - name: Type check frontend
+      - name: CI | Frontend - Type check
         working-directory: ./Frontend
         run: npx tsc --noEmit
 
-      - name: Run frontend tests
+      - name: CI | Frontend - Run tests
         working-directory: ./Frontend
         run: pnpm test -- --run
 
-      - name: Build frontend
+      - name: CI | Frontend - Build
         working-directory: ./Frontend
         run: pnpm build
 
+      - name: CI | Frontend - Trivy Dependency Scan (FS)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: './Frontend'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
   # ── CI: Docker-Build-Test bei PRs (kein Push) ───────────────────────────
   build-test-backend:
-    name: Docker Build Test Backend (PR only)
+    name: PR | Backend - Docker Scan
     if: github.event_name == 'pull_request' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true')
     needs: [changes, test-backend]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build backend (no push)
+      - name: PR | Backend - Build Docker Image (Local)
         uses: docker/build-push-action@v6
         with:
           context: ./Backend
           file: ./Backend/dockerfile
           push: false
+          load: true
+          tags: backend:test
+
+      - name: PR | Backend - Trivy Image Scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'backend:test'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
   build-test-frontend:
-    name: Docker Build Test Frontend (PR only)
+    name: PR | Frontend - Docker Scan
     if: github.event_name == 'pull_request' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true')
     needs: [changes, test-frontend]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build frontend (no push)
+      - name: PR | Frontend - Build Docker Image (Local)
         uses: docker/build-push-action@v6
         with:
           context: ./Frontend
           file: ./Frontend/dockerfile
           push: false
+          load: true
+          tags: frontend:test
+
+      - name: PR | Frontend - Trivy Image Scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'frontend:test'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
   # ── CD: Docker-Images bauen & nach GHCR pushen ────────────────────────────
   build-and-push-backend:
-    name: Build & Push Backend to GHCR
+    name: CD | Backend - Push to GHCR
     if: |
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/CI/CD') &&
@@ -138,19 +189,20 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: CD | Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: CD | Backend - Extract Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -159,7 +211,7 @@ jobs:
             type=sha,prefix=sha-
             type=raw,value=latest
 
-      - name: Build and push backend
+      - name: CD | Backend - Build & Push
         uses: docker/build-push-action@v6
         with:
           context: ./Backend
@@ -171,7 +223,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/caesars-gambit-backend:buildcache,mode=max
 
   build-and-push-frontend:
-    name: Build & Push Frontend to GHCR
+    name: CD | Frontend - Push to GHCR
     if: |
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/CI/CD') &&
@@ -182,19 +234,20 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: CD | Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: CD | Frontend - Extract Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -203,7 +256,7 @@ jobs:
             type=sha,prefix=sha-
             type=raw,value=latest
 
-      - name: Build and push frontend
+      - name: CD | Frontend - Build & Push
         uses: docker/build-push-action@v6
         with:
           context: ./Frontend
