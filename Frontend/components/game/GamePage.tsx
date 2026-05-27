@@ -213,7 +213,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                     >
                                         {name.charAt(0).toUpperCase()}
                                     </div>
-                                    <div className="text-sm font-medium truncate">{name}</div>
+                                    <div className="text-sm font-medium truncate">{name} {name === currentUsername && <span>(you)</span>}</div>
                                 </div>
                             )
                             )}
