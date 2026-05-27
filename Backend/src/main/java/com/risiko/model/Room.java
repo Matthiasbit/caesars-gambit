@@ -31,7 +31,7 @@ public class Room {
         if (gameStarted) {
             // do some error handling and unexpected error handling
         }
-        Player player = new Player(userId, userRepository);
+        Player player = new Player(userId, userRepository, gameController);
         players.add(player);
         player.setHost(host);
         List<SseEmitter> emitters = players.stream()

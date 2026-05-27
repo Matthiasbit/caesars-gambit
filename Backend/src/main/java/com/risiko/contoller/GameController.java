@@ -52,6 +52,7 @@ public class GameController {
             emitter.send(SseEmitter.event().name("init").data(room.getLobbyData()).build());
             if(room.isGameStarted()) {
                 room.getGamestate().sendGameStateUpdate();
+                player.askDistTroops();
             }
         } catch (IOException e) {
             emitter.completeWithError(e);

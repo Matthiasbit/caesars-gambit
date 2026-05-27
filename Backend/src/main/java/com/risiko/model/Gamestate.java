@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.risiko.contoller.GameController;
 import com.risiko.model.dto.TerritoryStateDto;
+
 public class Gamestate {
     private final List<Player> players;
     private static final int INITIAL_TROOPS = 40;
@@ -46,7 +47,9 @@ public class Gamestate {
         }
         for (int i = 0; i < players.size(); i++) {
             players.get(i).setTerritories(distributedTerritories.get(i));
-            players.get(i).askDistTroops(INITIAL_TROOPS);
+            players.get(i).setTroopstoDist(INITIAL_TROOPS);
+            players.get(i).askDistTroops();
+            
         }
         gameController.broadcastEvent(
                 players.stream()
@@ -66,9 +69,8 @@ public class Gamestate {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         gameController.broadcastEvent(emitters, "currentPlayer", currentPlayer.username);
-        List<SseEmitter> currentPlayeremitter = new ArrayList<>();
-        currentPlayeremitter.add(currentPlayer.emitter);
-        gameController.broadcastEvent(currentPlayeremitter, "askDistTroops", calculateReinforcements(currentPlayer));
+        currentPlayer.setTroopstoDist(calculateReinforcements(currentPlayer));
+        currentPlayer.askDistTroops();
     }
 
     public int calculateReinforcements(Player player) {
@@ -114,7 +116,7 @@ public class Gamestate {
         if (!fromTerritory.isAdjacentTo(toTerritory)) {
             throw new IllegalArgumentException("Die Gebiete sind nicht benachbart.");
         }
-        if(currentPlayer.hasTerritory(toTerritory)) {
+        if (currentPlayer.hasTerritory(toTerritory)) {
             throw new IllegalArgumentException("Das Zielgebiet gehört bereits dem angreifenden Spieler.");
         }
         if (currentPlayer.getTerritories().get(fromTerritory) <= sum) {
@@ -122,8 +124,8 @@ public class Gamestate {
         }
         for (Player p : players) {
             if (p.hasTerritory(toTerritory)) {
-                List<Integer> attackerRolls = dice(sum, 2); // TODO: wie viele Truppen verteidigen
-                List<Integer> defenderRolls = dice(2, 2); // TODO
+                List<Integer> attackerRolls = dice(Math.min(sum, 3), Math.min(p.getTerritories().get(toTerritory), 2));
+                List<Integer> defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory),2), Math.min(p.getTerritories().get(toTerritory), 2));
                 int comparisons = Math.min(attackerRolls.size(), defenderRolls.size());
                 int lostTroopsDefence = 0;
                 int lostTroopsAttack = 0;
@@ -136,7 +138,8 @@ public class Gamestate {
                 }
                 if (p.defend(toTerritory, lostTroopsDefence) == 0) {
                     currentPlayer.getTerritory(toTerritory);
-                    currentPlayer.distTroops(fromTerritory, -lostTroopsAttack);
+                    currentPlayer.getTerritories().put(fromTerritory, currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
+                    currentPlayer.moveTroops(fromTerritory, toTerritory, 1);
                     List<SseEmitter> emitters = new ArrayList<>();
                     emitters.add(currentPlayer.emitter);
                     gameController.broadcastEvent(emitters, "winTerritory", toTerritory + " " + currentPlayer.username);
@@ -145,7 +148,8 @@ public class Gamestate {
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                     for (Continent continent : Continent.values()) {
-                        if (continent.getTerritories().contains(toTerritory) && continent.isControlledBy(currentPlayer)) {
+                        if (continent.getTerritories().contains(toTerritory)
+                                && continent.isControlledBy(currentPlayer)) {
                             gameController.broadcastEvent(allEmitters, "continentConquered",
                                     continent.name() + " " + currentPlayer.username);
                         }
@@ -164,7 +168,10 @@ public class Gamestate {
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList()),
                 "attackResult",
-                "Attack from " + fromTerritory + " to " + toTerritory + " completed."); // TODO: lost troops hier noch einfügen für ui ux nur relevant wenn gebiet nicht gewonnen wurde
+                "Attack from " + fromTerritory + " to " + toTerritory + " completed."); // TODO: lost troops hier noch
+                                                                                        // einfügen für ui ux nur
+                                                                                        // relevant wenn gebiet nicht
+                                                                                        // gewonnen wurde
         checkIfGameEnded();
     }
 

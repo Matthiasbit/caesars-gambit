@@ -1,14 +1,12 @@
 package com.risiko.model;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
+import com.risiko.contoller.GameController;
 import com.risiko.repository.UserRepository;
 
 public class Player {
@@ -17,9 +15,12 @@ public class Player {
     private Map<Territorries, Integer> territories;
     public SseEmitter emitter;
     private boolean host;
+    private int troopstoDist;
+    private final GameController gameController;
 
-    public Player(long userId, UserRepository userRepository) {
+    public Player(long userId, UserRepository userRepository, GameController gameController) {
         this.userId = userId;
+        this.gameController = gameController;
         Optional<User> user = userRepository.findById(userId);
         this.username = user.isPresent() ? user.get().getUsername() : "Unknown";
     }
@@ -28,6 +29,7 @@ public class Player {
         this.territories = new HashMap<>();
         for (Territorries t : territories) {
             this.territories.put(t, 1);
+            this.troopstoDist -= 1;
         }
     }
 
@@ -36,6 +38,13 @@ public class Player {
     }
 
     public void distTroops(Territorries territory, int sum) {
+        if (troopstoDist - sum < 0) {
+            throw new IllegalArgumentException("Cannot distribute more troops than available");
+        }
+        if (sum < 0 ) {
+            throw new IllegalArgumentException("Cannot distribute negative troops");
+        }
+        troopstoDist -= sum;
         territories.put(territory, territories.get(territory) + sum);
     }
 
@@ -49,7 +58,7 @@ public class Player {
     }
 
     public int defend(Territorries territory, int lostTroops) {
-        if(territories.get(territory) <= lostTroops) {
+        if (territories.get(territory) <= lostTroops) {
             territories.remove(territory);
             return 0;
         }
@@ -60,12 +69,11 @@ public class Player {
         territories.put(territory, 0);
     }
 
-    public void askDistTroops(int sum) {
-        try {
-            emitter.send(SseEmitter.event().name("askDistTroops").data(sum - territories.size()));
-        } catch (IOException e) {
-            emitter.completeWithError(e);
+    public void askDistTroops() {
+        if (troopstoDist == 0) {
+            return;
         }
+        gameController.broadcastEvent(Collections.singletonList(emitter), "askDistTroops", troopstoDist);
     }
 
     public void setEmitter(SseEmitter emitter) {
@@ -82,5 +90,13 @@ public class Player {
 
     public void setHost(boolean host) {
         this.host = host;
+    }
+
+    public void setTroopstoDist(int troopstoDist) {
+        this.troopstoDist += troopstoDist;
+    }
+
+    public int getTroopstoDist() {
+        return troopstoDist;
     }
 }

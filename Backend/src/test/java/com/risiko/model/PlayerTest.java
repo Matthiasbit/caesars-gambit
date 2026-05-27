@@ -1,5 +1,6 @@
 package com.risiko.model;
 
+import com.risiko.contoller.GameController;
 import com.risiko.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -20,12 +21,16 @@ class PlayerTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private GameController gameController;
+
     private Player player;
 
     @BeforeEach
     void setUp() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        player = new Player(1L, userRepository);
+        player = new Player(1L, userRepository, gameController);
+        player.setTroopstoDist(2);
         player.setTerritories(List.of(Territorries.PALATIN, Territorries.NEAPEL));
     }
 
@@ -36,7 +41,7 @@ class PlayerTest {
         void userNichtInDatenbank_setztnameAufUnknown() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-            Player p = new Player(99L, userRepository);
+            Player p = new Player(99L, userRepository, gameController);
 
             assertThat(p.username).isEqualTo("Unknown");
         }
@@ -47,7 +52,7 @@ class PlayerTest {
             u.setUsername("testUser");
             when(userRepository.findById(99L)).thenReturn(Optional.of(u));
 
-            Player p = new Player(99L, userRepository);
+            Player p = new Player(99L, userRepository, gameController);
 
             assertThat(p.username).isEqualTo("testUser");
         }
@@ -92,16 +97,10 @@ class PlayerTest {
 
         @Test
         void erhoehtTruppenanzahl() {
+            player.setTroopstoDist(3);
             player.distTroops(Territorries.PALATIN, 3);
 
             assertThat(player.getTerritories().get(Territorries.PALATIN)).isEqualTo(4);
-        }
-
-        @Test
-        void verringertTruppenanzahl() {
-            player.distTroops(Territorries.PALATIN, -1);
-
-            assertThat(player.getTerritories().get(Territorries.PALATIN)).isEqualTo(0);
         }
     }
 
@@ -136,6 +135,7 @@ class PlayerTest {
 
         @Test
         void verlierteWenigerAlsVorhanden_behaeltGebiet() {
+            player.setTroopstoDist(3);
             player.distTroops(Territorries.PALATIN, 3); 
 
             assertThat(player.getTerritories().get(Territorries.PALATIN)).isEqualTo(4);
@@ -147,6 +147,7 @@ class PlayerTest {
 
         @Test
         void verlierteGenaueAnzahl_entferntGebiet() {
+            player.setTroopstoDist(2);
             player.distTroops(Territorries.PALATIN, 1); // now 2 troops
 
             int result = player.defend(Territorries.PALATIN, 2);
@@ -180,7 +181,7 @@ class PlayerTest {
         @Test
         void ohneGebiete_gibtLeereMapZurueck() {
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
-            Player p = new Player(2L, userRepository);
+            Player p = new Player(2L, userRepository, gameController);
 
             assertThat(p.getTerritories()).isEmpty();
         }
