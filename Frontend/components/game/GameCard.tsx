@@ -1,22 +1,56 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import styles from './GameCard.module.css'
 import { TerritoryLabels } from './TerritoryLabels'
+import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 
 const KARTE_SVG_PATH = '/assets/Karte-neutral.svg'
 const KARTE_FABIG_PATH = '/assets/Karte-fabig.jpg'
 
+interface TerritoryData {
+    territory: string
+    owner: string | null
+    troops: number
+}
+
 export interface GameCardProps {
     onRegionClick?: (regionId: string) => void
     gameStateJson?: string | null
+    selectedRegionId?: string | null
 }
 
-export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps) {
+export default function GameCard({ onRegionClick, gameStateJson, selectedRegionId }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
+    const onRegionClickRef = useRef(onRegionClick)
+    const [territories, setTerritories] = useState<TerritoryData[]>([])
+    const [svgLoaded, setSvgLoaded] = useState(false)
+    const ownerColorMap = useOwnerColorMap(territories)
+
+    useEffect(() => {
+        if (!gameStateJson) {
+            setTerritories([])
+            return
+        }
+
+        try {
+            const parsed = JSON.parse(gameStateJson)
+            if (Array.isArray(parsed)) {
+                setTerritories(parsed)
+            }
+        } catch (err) {
+            console.error('Fehler beim Parsen von gameStateJson:', err)
+        }
+    }, [gameStateJson])
+
+    useEffect(() => {
+        onRegionClickRef.current = onRegionClick
+    }, [onRegionClick])
 
     useEffect(() => {
         const container = svgContainerRef.current
         if (!container) return
+
+        setSvgLoaded(false)
 
         fetch(KARTE_SVG_PATH)
             .then((res) => res.text())
@@ -29,7 +63,7 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
                 svg.setAttribute('width', '100%')
                 svg.setAttribute('height', '100%')
                 svg.style.display = 'block'
-                svg.style.opacity = '0'
+                svg.style.opacity = '1'
                 svg.style.pointerEvents = 'auto'
 
                 const regions =
@@ -40,12 +74,14 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
                     region.style.pointerEvents = 'auto'
 
                     const clickHandler = () => {
-                        onRegionClick?.(region.id)
+                        onRegionClickRef.current?.(region.id)
                     }
 
                     region.addEventListener('click', clickHandler)
                     ;(region as SVGGraphicsElement & { _gcClickHandler?: () => void })._gcClickHandler = clickHandler
                 })
+
+                setSvgLoaded(true)
 
                 return () => {
                     regions.forEach((region) => {
@@ -59,7 +95,47 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
             .catch((err) => {
                 console.error('SVG konnte nicht geladen werden:', err)
             })
-    }, [onRegionClick])
+    }, [])
+
+    useEffect(() => {
+        if (!svgLoaded) return
+
+        const container = svgContainerRef.current
+        if (!container) return
+
+        const svg = container.querySelector('svg')
+        if (!svg) return
+
+        const regions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
+
+        regions.forEach((region) => {
+            const territory = territories.find((entry) => entry.territory === region.id)
+            const territoryColor = territory ? getColorForOwner(territory.owner, ownerColorMap) : null
+
+            region.setAttribute('fill', 'transparent')
+            region.setAttribute('fill-opacity', '0')
+            region.setAttribute('stroke', 'transparent')
+            region.setAttribute('stroke-width', '0')
+            region.style.fill = 'transparent'
+            region.style.fillOpacity = '0'
+            region.style.stroke = 'transparent'
+            region.style.strokeWidth = '0'
+            region.style.filter = 'none'
+            region.style.transition = 'all 0.2s ease'
+
+            if (territory?.owner && territoryColor && territory.territory === selectedRegionId) {
+                region.setAttribute('fill', territoryColor)
+                region.setAttribute('fill-opacity', '0.55')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.95)')
+                region.setAttribute('stroke-width', '3')
+                region.style.fill = territoryColor
+                region.style.fillOpacity = '0.55'
+                region.style.stroke = 'rgba(255,255,255,0.95)'
+                region.style.strokeWidth = '3'
+                region.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.45))'
+            }
+        })
+    }, [territories, ownerColorMap, selectedRegionId, svgLoaded])
 
     return (
         <>

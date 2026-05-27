@@ -58,7 +58,7 @@ public class Player {
         if (!territories.containsKey(to)) {
             throw new IllegalArgumentException("Das Zielgebiet gehört nicht dem aktuellen Spieler.");
         }
-        if (!from.isAdjacentTo(to)) {
+        if (!Territorries.findWayIfPossible(from, to, new java.util.HashSet<>(), this)) {
             throw new IllegalArgumentException("Die Gebiete sind nicht benachbart.");
         }
         if (territories.get(from) <= sum) {

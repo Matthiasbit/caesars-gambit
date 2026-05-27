@@ -43,7 +43,6 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
     useEffect(() => {
         if (!eventsource.gameStateJson) return
-
         try {
             const parsed = JSON.parse(eventsource.gameStateJson)
             if (Array.isArray(parsed)) {
@@ -193,6 +192,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                             <GameCard
                                 onRegionClick={handleRegionClick}
                                 gameStateJson={eventsource.gameStateJson}
+                                selectedRegionId={regionClicked}
                             />
                             <button onClick={() => handleEndTurn()}>EndTurn</button>
                         </div>
