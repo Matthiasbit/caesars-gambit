@@ -3,20 +3,21 @@ import { useEffect, useRef, useState } from 'react';
 type ChatMessage = { username: string; message: string };
 
 export type EventsourceTypes = {
-  playerNames: string[]; 
-    chatMessages: ChatMessage[];
-    gameStarted: boolean;
-    gameStateJson: string | null;
-    pendingDistCount: number | null;
-    setPendingDistCount: (count: number | null) => void;
-    setGameStarted: (started: boolean) => void;
+  playerNames: string[];
+  chatMessages: ChatMessage[];
+  gameStarted: boolean;
+  gameStateJson: string | null;
+  pendingDistCount: number | null;
+  currentPlayer: string | null;
+  continentConquered: { player: string; continent: string } | null;
+  setContinentConquered: (data: { player: string; continent: string } | null) => void;
+  setPendingDistCount: (count: number | null) => void;
+  setGameStarted: (started: boolean) => void;
 
 };
 
 export function useGameStream(
   roomId?: string,
-  currentUsername?: string | null,
-  onYourTurn?: () => void,
   onGameStarted?: () => void
 ) {
   const [playerNames, setPlayerNames] = useState<string[]>([]);
@@ -24,19 +25,11 @@ export function useGameStream(
   const [gameStarted, setGameStarted] = useState(false);
   const [gameStateJson, setGameStateJson] = useState<string | null>(null);
   const [pendingDistCount, setPendingDistCount] = useState<number | null>(null);
+  const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
+  const [continentConquered, setContinentConquered] = useState<{ player: string; continent: string } | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const currentUsernameRef = useRef<string | null>(currentUsername);
-  const onYourTurnRef = useRef<() => void | undefined>(onYourTurn);
   const onGameStartedRef = useRef<() => void | undefined>(onGameStarted);
-
-  useEffect(() => {
-    currentUsernameRef.current = currentUsername;
-  }, [currentUsername]);
-
-  useEffect(() => {
-    onYourTurnRef.current = onYourTurn;
-  }, [onYourTurn]);
-
+ 
   useEffect(() => {
     onGameStartedRef.current = onGameStarted;
   }, [onGameStarted]);
@@ -87,8 +80,16 @@ export function useGameStream(
     });
 
     eventSource.addEventListener('currentPlayer', (e: MessageEvent) => {
-      if (currentUsernameRef.current && currentUsernameRef.current === e.data) {
-        onYourTurnRef.current?.();
+      setCurrentPlayer(e.data);
+    });
+
+    eventSource.addEventListener('continentConquered', (e: MessageEvent) => {
+      try {
+        const data: { player: string; continent: string } = JSON.parse(e.data);
+        setContinentConquered(data);
+        setTimeout(() => setContinentConquered(null), 5000);
+      } catch (err) {
+        console.error('failed parse continentConquered', err);
       }
     });
 
@@ -111,6 +112,9 @@ export function useGameStream(
     gameStarted,
     gameStateJson,
     pendingDistCount,
+    currentPlayer,
+    continentConquered,
+    setContinentConquered,
     setPendingDistCount,
     setGameStarted,
   } as EventsourceTypes;

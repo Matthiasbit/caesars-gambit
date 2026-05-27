@@ -91,7 +91,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     async function handleDialogConfirm(num: number) {
         if (eventsource.pendingDistCount == null || !dialogTerritory) return
 
-        await distTroops({sum: num, to: dialogTerritory, roomId});
+        await distTroops({ sum: num, to: dialogTerritory, roomId });
         // @ts-expect-error - kein Plan warum er hier rumheult
         eventsource.setPendingDistCount((prev: number | null) => {
             const remaining = prev !== null ? prev - num : null
@@ -103,12 +103,12 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
     async function handleMoveConfirm(num: number) {
         setMoveDialog(false)
-        await moveTroops({sum: num, from: moveFrom!, to: moveTo!, roomId});
+        await moveTroops({ sum: num, from: moveFrom!, to: moveTo!, roomId });
     }
 
     async function handleAttackConfirm(num: number) {
         setAttackDialog(false)
-        await attack({sum: num, from: moveFrom!, to: moveTo!, roomId});
+        await attack({ sum: num, from: moveFrom!, to: moveTo!, roomId });
 
     }
 
@@ -182,6 +182,26 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
     return (
         <>
+            {eventsource.continentConquered && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
+                    <div style={{ position: 'relative', zIndex: 3001, backgroundColor: '#0b1220', border: '2px solid rgba(59,130,246,0.5)', borderRadius: '12px', padding: '40px', textAlign: 'center', color: 'white', maxWidth: '500px' }}>
+                        <h1 className="text-3xl font-bold mb-4"> Kontinent erobert!</h1>
+                        <p className="text-xl mb-6">
+                            <span style={{ color: 'rgba(59,130,246,1)', fontWeight: 'bold' }}>{eventsource.continentConquered.player}</span>
+                            {' hat den Kontinent '}
+                            <span style={{ color: 'rgb(255, 255, 255)', fontWeight: 'bold' }}>{eventsource.continentConquered.continent}</span>
+                            {' erobert!'}
+                        </p>
+                        <button 
+                            onClick={() => eventsource.setContinentConquered(null)}
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
             {eventsource.pendingDistCount != null && (
                 <div style={{ position: 'fixed', right: 16, top: 16, zIndex: 2000 }}>
                     <div className="rounded bg-[#0b1220] border border-[rgba(59,130,246,0.25)] px-4 py-3 text-white shadow">
@@ -206,7 +226,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                         <div className="space-y-2 flex-shrink-0">
                             <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Spieler</h2>
                             {eventsource.playerNames.map((name, index) => (
-                                <div key={index} className="flex items-center gap-3 p-2 rounded-md border border-[rgba(59,130,246,0.1)] hover:border-[rgba(59,130,246,0.3)] transition-colors">
+                                <div key={index} className="flex items-center gap-3 p-2 rounded-md border border-[rgba(59,130,246,0.1)] hover:border-[rgba(59,130,246,0.3)] transition-colors" style={{ backgroundColor: name === eventsource.currentPlayer ? 'rgba(59, 131, 246, 0.17)' : 'transparent' }}>
                                     <div
                                         className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white font-semibold flex-shrink-0"
                                         style={{ backgroundColor: getColorForOwner(name, ownerColorMap) }}
@@ -235,7 +255,13 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 selectedRegionId={regionClicked}
                                 hoveredRegionId={hoveredRegionId}
                             />
-                            <button onClick={() => handleEndTurn()}>EndTurn</button>
+                            <button 
+                                onClick={() => handleEndTurn()}
+                                className="absolute bottom-4 left-4 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
+                                disabled={eventsource.currentPlayer !== currentUsername}
+                            >
+                                Zug beenden
+                            </button>
                         </div>
                     </div>
                 </div>

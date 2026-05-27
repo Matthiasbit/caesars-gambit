@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.risiko.contoller.GameController;
+import com.risiko.model.dto.ContinentConquered;
 import com.risiko.model.dto.TerritoryStateDto;
 
 public class Gamestate {
@@ -150,8 +151,10 @@ public class Gamestate {
                     for (Continent continent : Continent.values()) {
                         if (continent.getTerritories().contains(toTerritory)
                                 && continent.isControlledBy(currentPlayer)) {
-                            gameController.broadcastEvent(allEmitters, "continentConquered",
-                                    continent.name() + " " + currentPlayer.username);
+                            ContinentConquered event = new ContinentConquered();
+                            event.setPlayer(currentPlayer.username);
+                            event.setContinent(continent.name());
+                            gameController.broadcastEvent(allEmitters, "continentConquered", event);
                         }
                     }
                 } else {
