@@ -58,6 +58,28 @@ describe('GameCard', () => {
     })
   })
 
+  it('should preview a hovered target with the target owner color', async () => {
+    const mockGameState = JSON.stringify([
+      { territory: 'region-1', owner: 'Alice', troops: 5 },
+    ])
+
+    const { container } = render(
+      <GameCard gameStateJson={mockGameState} hoveredRegionId="region-1" />
+    )
+
+    await waitFor(() => {
+      const region = container.querySelector('path#region-1') as SVGElement
+
+      expect(region).toBeTruthy()
+      expect(region.style.fill).toBe('rgb(230, 25, 75)')
+      expect(region.style.fillOpacity).toBe('0.35')
+      expect(region.style.strokeWidth).toBe('2')
+      expect(region.getAttribute('fill')).toBe('#e6194b')
+      expect(region.getAttribute('fill-opacity')).toBe('0.35')
+      expect(region.getAttribute('stroke-width')).toBe('2')
+    })
+  })
+
   it('should handle SVG load error', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     ;(global.fetch as Mock).mockRejectedValueOnce(new Error('SVG not found'))

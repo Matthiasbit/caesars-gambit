@@ -15,13 +15,16 @@ interface TerritoryData {
 
 export interface GameCardProps {
     onRegionClick?: (regionId: string) => void
+    onRegionHover?: (regionId: string | null) => void
     gameStateJson?: string | null
     selectedRegionId?: string | null
+    hoveredRegionId?: string | null
 }
 
-export default function GameCard({ onRegionClick, gameStateJson, selectedRegionId }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
+    const onRegionHoverRef = useRef(onRegionHover)
     const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [svgLoaded, setSvgLoaded] = useState(false)
     const ownerColorMap = useOwnerColorMap(territories)
@@ -45,6 +48,10 @@ export default function GameCard({ onRegionClick, gameStateJson, selectedRegionI
     useEffect(() => {
         onRegionClickRef.current = onRegionClick
     }, [onRegionClick])
+
+    useEffect(() => {
+        onRegionHoverRef.current = onRegionHover
+    }, [onRegionHover])
 
     useEffect(() => {
         const container = svgContainerRef.current
@@ -77,8 +84,20 @@ export default function GameCard({ onRegionClick, gameStateJson, selectedRegionI
                         onRegionClickRef.current?.(region.id)
                     }
 
+                    const mouseEnterHandler = () => {
+                        onRegionHoverRef.current?.(region.id)
+                    }
+
+                    const mouseLeaveHandler = () => {
+                        onRegionHoverRef.current?.(null)
+                    }
+
                     region.addEventListener('click', clickHandler)
+                    region.addEventListener('mouseenter', mouseEnterHandler)
+                    region.addEventListener('mouseleave', mouseLeaveHandler)
                     ;(region as SVGGraphicsElement & { _gcClickHandler?: () => void })._gcClickHandler = clickHandler
+                    ;(region as SVGGraphicsElement & { _gcMouseEnterHandler?: () => void })._gcMouseEnterHandler = mouseEnterHandler
+                    ;(region as SVGGraphicsElement & { _gcMouseLeaveHandler?: () => void })._gcMouseLeaveHandler = mouseLeaveHandler
                 })
 
                 setSvgLoaded(true)
@@ -133,9 +152,19 @@ export default function GameCard({ onRegionClick, gameStateJson, selectedRegionI
                 region.style.stroke = 'rgba(255,255,255,0.95)'
                 region.style.strokeWidth = '3'
                 region.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.45))'
+            } else if (territory?.owner && territoryColor && territory.territory === hoveredRegionId) {
+                region.setAttribute('fill', territoryColor)
+                region.setAttribute('fill-opacity', '0.35')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.9)')
+                region.setAttribute('stroke-width', '2')
+                region.style.fill = territoryColor
+                region.style.fillOpacity = '0.35'
+                region.style.stroke = 'rgba(255,255,255,0.9)'
+                region.style.strokeWidth = '2'
+                region.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.35))'
             }
         })
-    }, [territories, ownerColorMap, selectedRegionId, svgLoaded])
+    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, svgLoaded])
 
     return (
         <>
@@ -150,8 +179,16 @@ export default function GameCard({ onRegionClick, gameStateJson, selectedRegionI
                     style={{ width: '100%', height: '100%' }}
                 />
 
-                <div ref={svgContainerRef} className={styles.mapSvgContainer} />
-                <TerritoryLabels gameStateJson={gameStateJson || null} onTerritoryButtonClick={onRegionClick}  />
+                <div
+                    ref={svgContainerRef}
+                    className={styles.mapSvgContainer}
+                    onMouseLeave={() => onRegionHoverRef.current?.(null)}
+                />
+                <TerritoryLabels
+                    gameStateJson={gameStateJson || null}
+                    onTerritoryButtonClick={onRegionClick}
+                    onTerritoryHover={onRegionHover}
+                />
             </div>
         </>
     )

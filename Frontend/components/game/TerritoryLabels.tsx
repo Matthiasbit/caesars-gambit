@@ -10,11 +10,13 @@ interface TerritoryData {
 interface TerritoryLabelsProps {
     gameStateJson: string | null
     onTerritoryButtonClick?: (territoryId: string) => void
+    onTerritoryHover?: (territoryId: string | null) => void
 }
 
 export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
     gameStateJson,
     onTerritoryButtonClick,
+    onTerritoryHover,
 }) => {
     const [territories, setTerritories] = useState<TerritoryData[]>([])
 
@@ -121,7 +123,11 @@ export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
                 const color = getColorForOwner(territory.owner, ownerColorMap)
 
                 return (
-                    <g key={territory.territory}>
+                    <g
+                        key={territory.territory}
+                        onMouseEnter={() => onTerritoryHover?.(territory.territory)}
+                        onMouseLeave={() => onTerritoryHover?.(null)}
+                    >
                         <circle
                             cx={pos.x}
                             cy={pos.y}
@@ -130,6 +136,8 @@ export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
                             pointerEvents="auto"
                             style={{ cursor: 'pointer' }}
                             onClick={() => onTerritoryButtonClick?.(territory.territory)}
+                            onMouseEnter={() => onTerritoryHover?.(territory.territory)}
+                            onMouseLeave={() => onTerritoryHover?.(null)}
                             aria-label={`Territory ${territory.territory}`}
                         />
                         <circle
@@ -143,6 +151,8 @@ export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
                             transform={`translate(${pos.x}, ${pos.y})`}
                             style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                             onClick={() => onTerritoryButtonClick?.(territory.territory)}
+                            onMouseEnter={() => onTerritoryHover?.(territory.territory)}
+                            onMouseLeave={() => onTerritoryHover?.(null)}
                             aria-label={`Territory ${territory.territory}`}
                         >
                             <circle cx={0} cy={0} r={12} fill={color} stroke="#000" strokeWidth={1} />

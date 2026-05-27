@@ -9,6 +9,7 @@ import { moveTroops } from '../api/moveTroops'
 import { attack } from '../api/attack'
 import { endTurn } from '../api/endTurn'
 import { EventsourceTypes } from '../hooks/useGameStream'
+import { findWayIfPossible, isAdjacent } from '@/lib/territories'
 
 type GamePageProps = {
     roomId: string
@@ -23,6 +24,7 @@ type TerritoryData = {
 
 export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [regionClicked, setRegionClicked] = useState<string | null>(null)
+    const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null)
     const [dialogTerritory, setDialogTerritory] = useState<string | null>(null);
     const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [moveDialog, setMoveDialog] = useState(false)
@@ -64,6 +66,18 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         return territory ? territory.troops : 0
     }
 
+    function isValidHoverTarget(regionId: string): boolean {
+        if (!regionClicked || regionId === regionClicked) {
+            return false
+        }
+
+        if (territoryOwnedByCurrentUser(regionId)) {
+            return findWayIfPossible(regionClicked, regionId, territories, currentUsername)
+        }
+
+        return isAdjacent(regionClicked, regionId)
+    }
+
     function onDistSubmit(territoryId: string) {
         if (eventsource.pendingDistCount == null) return
         if (!territoryOwnedByCurrentUser(territoryId)) {
@@ -99,7 +113,23 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }
 
 
+    function handleRegionHover(regionId: string | null) {
+        if (!regionClicked) {
+            setHoveredRegionId(null)
+            return
+        }
+
+        if (!regionId || regionId === regionClicked) {
+            setHoveredRegionId(null)
+            return
+        }
+
+        setHoveredRegionId(isValidHoverTarget(regionId) ? regionId : null)
+    }
+
     function handleRegionClick(regionId: string) {
+        setHoveredRegionId(null)
+
         if (!regionClicked && !territoryOwnedByCurrentUser(regionId)) {
             console.log("Hier einbauen, dass nicht eigenes Gebiert ist")
             return
@@ -115,20 +145,29 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         }
         if (regionClicked) {
             if (territoryOwnedByCurrentUser(regionId)) {
+                if (!findWayIfPossible(regionClicked, regionId, territories, currentUsername)) {
+                    console.log('Kein zusammenhängender Weg für Bewegung:', regionClicked, regionId)
+                    return
+                }
                 setMoveDialog(true)
                 setMoveTroopsCount(territoryTroopCount(regionClicked) - 1)
                 setMoveTo(regionId)
                 setMoveFrom(regionClicked)
                 setRegionClicked(null)
                 return;
-            } else {
-                setAttackDialog(true)
-                setMoveTroopsCount(territoryTroopCount(regionClicked) - 1)
-                setMoveTo(regionId)
-                setMoveFrom(regionClicked)
-                setRegionClicked(null)
-                return;
             }
+
+            if (!isAdjacent(regionClicked, regionId)) {
+                console.log('Nicht benachbart:', regionClicked, regionId)
+                return
+            }
+
+            setAttackDialog(true)
+            setMoveTroopsCount(territoryTroopCount(regionClicked) - 1)
+            setMoveTo(regionId)
+            setMoveFrom(regionClicked)
+            setRegionClicked(null)
+            return;
         }
         console.log('Region angeklickt:', regionId, regionClicked)
         setRegionClicked(regionId)
@@ -191,8 +230,10 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                         <div className="relative rounded-xl border border-[rgba(59,130,246,0.25)] bg-black/30 overflow-hidden shadow-md w-full" style={{}}>
                             <GameCard
                                 onRegionClick={handleRegionClick}
+                                onRegionHover={handleRegionHover}
                                 gameStateJson={eventsource.gameStateJson}
                                 selectedRegionId={regionClicked}
+                                hoveredRegionId={hoveredRegionId}
                             />
                             <button onClick={() => handleEndTurn()}>EndTurn</button>
                         </div>
