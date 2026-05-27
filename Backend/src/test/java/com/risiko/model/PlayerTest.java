@@ -31,7 +31,7 @@ class PlayerTest {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
         player = new Player(1L, userRepository, gameController);
         player.setTroopstoDist(2);
-        player.setTerritories(List.of(Territorries.PALATIN, Territorries.NEAPEL));
+        player.setTerritories(List.of(Territorries.PALATIN, Territorries.LATERANO));
     }
 
     @Nested
@@ -109,16 +109,20 @@ class PlayerTest {
 
         @Test
         void verringertTruppenImQuellgebiet() {
-            player.moveTroops(Territorries.PALATIN, Territorries.NEAPEL, 1);
+            player.setTroopstoDist(1);
+            player.distTroops(Territorries.PALATIN, 1);
+            player.moveTroops(Territorries.PALATIN, Territorries.LATERANO, 1);
 
-            assertThat(player.getTerritories().get(Territorries.PALATIN)).isEqualTo(0);
+            assertThat(player.getTerritories().get(Territorries.PALATIN)).isEqualTo(1);
         }
 
         @Test
         void erhoehtTruppenImZielgebiet() {
-            player.moveTroops(Territorries.PALATIN, Territorries.NEAPEL, 1);
+            player.setTroopstoDist(1);
+            player.distTroops(Territorries.PALATIN, 1);
+            player.moveTroops(Territorries.PALATIN, Territorries.LATERANO, 1);
 
-            assertThat(player.getTerritories().get(Territorries.NEAPEL)).isEqualTo(2);
+            assertThat(player.getTerritories().get(Territorries.LATERANO)).isEqualTo(2);
         }
     }
 
