@@ -1,6 +1,8 @@
 package com.risiko.contoller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.risiko.exception.AppException;
+import com.risiko.exception.GlobalExceptionHandler;
 import com.risiko.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -9,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -35,7 +38,9 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(authController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Nested
@@ -56,7 +61,7 @@ class AuthControllerTest {
         @Test
         void emailBereitsVorhanden_gibt409Zurueck() throws Exception {
             when(authService.register(any(), any(), any()))
-                    .thenThrow(new RuntimeException("Email exists"));
+                    .thenThrow(new AppException(HttpStatus.CONFLICT, "Email exists"));
 
             mockMvc.perform(post("/api/auth/register")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +101,7 @@ class AuthControllerTest {
         @Test
         void falscheCredentials_gibt401Zurueck() throws Exception {
             when(authService.login(any(), any()))
-                    .thenThrow(new RuntimeException("Invalid credentials"));
+                    .thenThrow(new AppException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
             mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
