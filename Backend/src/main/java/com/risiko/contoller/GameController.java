@@ -68,7 +68,7 @@ public class GameController {
             .findFirst()
             .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
-            throw new AppException(HttpStatus.FORBIDDEN, "It's not the current player's turn");
+            throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
         Territorries from = Territorries.getTerritorryByDisplayName((String) request.get("from"));
         Territorries to = Territorries.getTerritorryByDisplayName((String) request.get("to"));
@@ -85,7 +85,7 @@ public class GameController {
             .findFirst()
             .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
-            throw new AppException(HttpStatus.FORBIDDEN, "It's not the current player's turn");
+            throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
         room.getGamestate().attack(Territorries.getTerritorryByDisplayName((String) request.get("from")), Territorries.getTerritorryByDisplayName((String) request.get("to")), (Integer) request.get("sum"));
         room.getGamestate().sendGameStateUpdate();
@@ -108,7 +108,7 @@ public class GameController {
             .findFirst()
             .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
-            throw new AppException(HttpStatus.FORBIDDEN, "It's not the current player's turn");
+            throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
         room.getGamestate().endMove();
         room.getGamestate().sendGameStateUpdate();
