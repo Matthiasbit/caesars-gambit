@@ -93,7 +93,7 @@ class GameControllerTest {
         }
 
         @Test
-        void nichtAktuellerSpieler_wirft403() throws Exception {
+        void nichtAktuellerSpieler_wirft409() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
             Player otherPlayer = mock(Player.class);
@@ -105,7 +105,7 @@ class GameControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
                             Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 3))))
-                    .andExpect(status().isForbidden());
+                    .andExpect(status().isConflict());
         }
 
         @Test
@@ -195,7 +195,7 @@ class GameControllerTest {
         }
 
         @Test
-        void nichtAktuellerSpieler_wirft403() throws Exception {
+        void nichtAktuellerSpieler_wirft409() throws Exception {
             setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
             Player otherPlayer = mock(Player.class);
@@ -207,7 +207,7 @@ class GameControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
                             Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 2))))
-                    .andExpect(status().isForbidden());
+                    .andExpect(status().isConflict());
         }
 
         @Test
