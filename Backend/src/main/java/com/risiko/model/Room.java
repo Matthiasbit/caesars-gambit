@@ -7,9 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.risiko.contoller.GameController;
+import com.risiko.exception.AppException;
 import com.risiko.model.dto.ChatMessageDto;
 import com.risiko.model.dto.LobbyPlayerDto;
 import com.risiko.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 
 public class Room {
     private final int roomId;
@@ -63,7 +65,7 @@ public class Room {
 
     public void startGame() {
         if (gameStarted) {
-            throw new IllegalStateException("Game already started");
+            throw new AppException(HttpStatus.CONFLICT, "Game already started");
         }
         gameStarted = true;
         gamestate = new Gamestate(this, players, gameController);

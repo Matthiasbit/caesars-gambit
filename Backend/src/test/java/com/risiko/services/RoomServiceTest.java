@@ -1,7 +1,6 @@
 package com.risiko.services;
 
 import com.risiko.exception.AppException;
-import org.springframework.http.HttpStatus;
 import com.risiko.contoller.GameController;
 import com.risiko.model.Room;
 import com.risiko.repository.UserRepository;
@@ -165,7 +164,9 @@ class RoomServiceTest {
 
             roomService.removeRoom(room.getRoomId());
 
-            assertThat(roomService.getRoomById(room.getRoomId())).isNull();
+            assertThatThrownBy(() -> roomService.getRoomById(room.getRoomId()))
+                    .isInstanceOf(AppException.class)
+                    .hasMessage("Room not found");
         }
 
         @Test
@@ -206,7 +207,7 @@ class RoomServiceTest {
         @Test
         void nichtVorhandenerRaum_wirftException() {
             assertThatThrownBy(() -> roomService.startGame(999))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(AppException.class)
                     .hasMessage("Room not found");
         }
     }
