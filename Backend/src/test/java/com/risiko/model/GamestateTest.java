@@ -24,7 +24,7 @@ class GamestateTest {
     private Player makePlayer(long id) {
         UserRepository userRepo = mock(UserRepository.class);
         when(userRepo.findById(id)).thenReturn(Optional.empty());
-        return new Player(id, userRepo);
+        return new Player(id, userRepo, gameController);
     }
 
     @Nested

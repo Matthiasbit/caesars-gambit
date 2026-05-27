@@ -39,11 +39,9 @@ export default function RoomPage() {
   return (
     <>
       {eventsource.gameStarted ? (
-        <>
-          <GamePage roomId={roomId!} eventsource={eventsource} />
-        </>
+        <GamePage roomId={roomId!} eventsource={eventsource} />
       ) : (
-        <Lobby roomId={roomId!} eventsource={eventsource}  router={router} />
+        <Lobby roomId={roomId!} eventsource={eventsource} router={router} />
       )}
     </>
   );
