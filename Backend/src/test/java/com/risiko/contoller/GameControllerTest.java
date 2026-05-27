@@ -9,6 +9,7 @@ import com.risiko.model.Territorries;
 import com.risiko.model.User;
 
 import java.util.HashMap;
+import java.util.List;
 import com.risiko.services.AuthService;
 import com.risiko.services.RoomService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,8 +25,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -62,14 +61,23 @@ class GameControllerTest {
                 .build();
     }
 
+    private void setupAuthenticatedCurrentPlayer() {
+        User user = new User();
+        user.setId(1L);
+                lenient().when(authService.getUserFromAuth()).thenReturn(user);
+                lenient().when(player.getUserId()).thenReturn(1L);
+                lenient().when(room.getPlayers()).thenReturn(List.of(player));
+                lenient().when(room.getGamestate()).thenReturn(gamestate);
+                lenient().when(gamestate.getCurrentPlayer()).thenReturn(player);
+    }
+
     @Nested
     class Move {
 
         @Test
         void gueltigeAnfrage_fuehrtMoveTroopsAus() throws Exception {
+            setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(room.getGamestate()).thenReturn(gamestate);
-            when(gamestate.getCurrentPlayer()).thenReturn(player);
             when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
             when(player.hasTerritory(Territorries.LATERANO)).thenReturn(true);
             Map<Territorries, Integer> territories = new HashMap<>();
@@ -87,10 +95,25 @@ class GameControllerTest {
         }
 
         @Test
-        void quellgebietNichtImBesitz_wirft400() throws Exception {
+        void nichtAktuellerSpieler_wirft404() throws Exception {
+            setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(room.getGamestate()).thenReturn(gamestate);
+            Player otherPlayer = mock(Player.class);
+            when(room.getPlayers()).thenReturn(List.of(otherPlayer));
+            when(otherPlayer.getUserId()).thenReturn(1L);
             when(gamestate.getCurrentPlayer()).thenReturn(player);
+
+            mockMvc.perform(post("/api/game/move")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 3))))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void quellgebietNichtImBesitz_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
             when(player.hasTerritory(Territorries.PALATIN)).thenReturn(false);
 
             mockMvc.perform(post("/api/game/move")
@@ -102,9 +125,8 @@ class GameControllerTest {
 
         @Test
         void zielgebietNichtImBesitz_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(room.getGamestate()).thenReturn(gamestate);
-            when(gamestate.getCurrentPlayer()).thenReturn(player);
             when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
             when(player.hasTerritory(Territorries.LATERANO)).thenReturn(false);
 
@@ -117,9 +139,8 @@ class GameControllerTest {
 
         @Test
         void gebieteNichtBenachbart_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(room.getGamestate()).thenReturn(gamestate);
-            when(gamestate.getCurrentPlayer()).thenReturn(player);
             when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
             when(player.hasTerritory(Territorries.EICHENWALD)).thenReturn(true);
 
@@ -132,9 +153,8 @@ class GameControllerTest {
 
         @Test
         void nichtGenugTruppen_wirft400() throws Exception {
+            setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(room.getGamestate()).thenReturn(gamestate);
-            when(gamestate.getCurrentPlayer()).thenReturn(player);
             when(player.hasTerritory(Territorries.PALATIN)).thenReturn(true);
             when(player.hasTerritory(Territorries.LATERANO)).thenReturn(true);
             Map<Territorries, Integer> territories = new HashMap<>();
@@ -165,8 +185,8 @@ class GameControllerTest {
 
         @Test
         void gueltigeAnfrage_fuehrtAttackAus() throws Exception {
+            setupAuthenticatedCurrentPlayer();
             when(roomService.getRoomById(1)).thenReturn(room);
-            when(room.getGamestate()).thenReturn(gamestate);
 
             mockMvc.perform(post("/api/game/attack")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -176,6 +196,22 @@ class GameControllerTest {
 
             verify(gamestate).attack(any(), any(), eq(2));
             verify(gamestate).sendGameStateUpdate();
+        }
+
+        @Test
+        void nichtAktuellerSpieler_wirft404() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            Player otherPlayer = mock(Player.class);
+            when(room.getPlayers()).thenReturn(List.of(otherPlayer));
+            when(otherPlayer.getUserId()).thenReturn(1L);
+            when(gamestate.getCurrentPlayer()).thenReturn(player);
+
+            mockMvc.perform(post("/api/game/attack")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", 1, "from", "Palatin", "to", "Laterano", "sum", 2))))
+                    .andExpect(status().isNotFound());
         }
 
         @Test
