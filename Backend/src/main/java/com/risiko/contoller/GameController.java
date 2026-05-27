@@ -73,7 +73,7 @@ public class GameController {
         Territorries from = Territorries.getTerritorryByDisplayName((String) request.get("from"));
         Territorries to = Territorries.getTerritorryByDisplayName((String) request.get("to"));
         int sum = ((Number) request.get("sum")).intValue();
-        room.getGamestate().move(from, to, sum);
+        player.moveTroops(from, to, sum);
         room.getGamestate().sendGameStateUpdate();
     }
                     

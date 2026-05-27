@@ -49,6 +49,21 @@ public class Player {
     }
 
     public void moveTroops(Territorries from, Territorries to, int sum) {
+        if (sum <= 0) {
+            throw new IllegalArgumentException("Die Anzahl der zu verschiebenden Truppen muss positiv sein.");
+        }
+        if (!territories.containsKey(from)) {
+            throw new IllegalArgumentException("Das Quellgebiet gehört nicht dem aktuellen Spieler.");
+        }
+        if (!territories.containsKey(to)) {
+            throw new IllegalArgumentException("Das Zielgebiet gehört nicht dem aktuellen Spieler.");
+        }
+        if (!from.isAdjacentTo(to)) {
+            throw new IllegalArgumentException("Die Gebiete sind nicht benachbart.");
+        }
+        if (territories.get(from) <= sum) {
+            throw new IllegalArgumentException("Nicht genug Truppen zum Verschieben.");
+        }
         territories.put(from, territories.get(from) - sum);
         territories.put(to, territories.get(to) + sum);
     }
