@@ -1,8 +1,10 @@
 package com.risiko.services;
 
+import com.risiko.exception.AppException;
 import com.risiko.model.User;
 import com.risiko.repository.UserRepository;
 import com.risiko.security.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,8 +29,8 @@ public class AuthService {
 
     @Transactional
     public String register(String username, String email, String password) {
-        if (userRepository.existsByEmail(email)) throw new RuntimeException("Email exists");
-        if (userRepository.existsByUsername(username)) throw new RuntimeException("Username exists");
+        if (userRepository.existsByEmail(email)) throw new AppException(HttpStatus.CONFLICT, "Email exists");
+        if (userRepository.existsByUsername(username)) throw new AppException(HttpStatus.CONFLICT, "Username exists");
         User u = new User();
         u.setUsername(username);
         u.setEmail(email);
@@ -38,8 +40,8 @@ public class AuthService {
     }
 
     public String login(String email, String password) {
-        User u = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid credentials"));
-        if (!passwordEncoder.matches(password, u.getPassword())) throw new RuntimeException("Invalid credentials");
+        User u = userRepository.findByEmail(email).orElseThrow(() -> new AppException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+        if (!passwordEncoder.matches(password, u.getPassword())) throw new AppException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         return jwtUtil.generateToken(u.getEmail(), u.getId());
     }
 
@@ -54,7 +56,7 @@ public class AuthService {
         User user = getUserFromAuth();
 
         if (!normalizedUsername.equals(user.getUsername()) && userRepository.existsByUsername(normalizedUsername)) {
-            throw new IllegalArgumentException("Username exists");
+            throw new AppException(HttpStatus.CONFLICT, "Username exists");
         }
 
         user.setUsername(normalizedUsername);
@@ -69,7 +71,7 @@ public class AuthService {
         }
 
         String email = auth.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByEmail(email).orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
     }
     
 }

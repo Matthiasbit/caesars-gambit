@@ -175,6 +175,25 @@ public class Gamestate {
         checkIfGameEnded();
     }
 
+    public void move(Territorries fromTerritory, Territorries toTerritory, int sum) {
+        if (sum <= 0) {
+            throw new IllegalArgumentException("Die Anzahl der zu verschiebenden Truppen muss positiv sein.");
+        }
+        if (!currentPlayer.hasTerritory(fromTerritory)) {
+            throw new IllegalArgumentException("Das Quellgebiet gehört nicht dem aktuellen Spieler.");
+        }
+        if (!currentPlayer.hasTerritory(toTerritory)) {
+            throw new IllegalArgumentException("Das Zielgebiet gehört nicht dem aktuellen Spieler.");
+        }
+        if (!fromTerritory.isAdjacentTo(toTerritory)) {
+            throw new IllegalArgumentException("Die Gebiete sind nicht benachbart.");
+        }
+        if (currentPlayer.getTerritories().get(fromTerritory) <= sum) {
+            throw new IllegalArgumentException("Nicht genug Truppen zum Verschieben.");
+        }
+        currentPlayer.moveTroops(fromTerritory, toTerritory, sum);
+    }
+
     public static List<Integer> dice(int rollCount, int returnCount) {
         if (rollCount <= 0 || returnCount <= 0) {
             return new ArrayList<>();

@@ -28,6 +28,9 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import com.risiko.exception.AppException;
+import org.springframework.http.HttpStatus;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -170,7 +173,7 @@ class GameControllerTest {
 
         @Test
         void raumNichtGefunden_wirft404() throws Exception {
-            when(roomService.getRoomById(99)).thenReturn(null);
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
 
             mockMvc.perform(post("/api/game/move")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -216,7 +219,7 @@ class GameControllerTest {
 
         @Test
         void raumNichtGefunden_wirft404() throws Exception {
-            when(roomService.getRoomById(99)).thenReturn(null);
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
 
             mockMvc.perform(post("/api/game/attack")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -254,7 +257,7 @@ class GameControllerTest {
 
         @Test
         void raumNichtGefunden_wirft404() throws Exception {
-            when(roomService.getRoomById(99)).thenReturn(null);
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
 
             mockMvc.perform(get("/api/game/stream/99"))
                     .andExpect(status().isNotFound());

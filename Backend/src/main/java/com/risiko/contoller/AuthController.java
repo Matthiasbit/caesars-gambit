@@ -38,24 +38,16 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterReq req, HttpServletResponse response) {
-        try {
-            String token = authService.register(req.username(), req.email(), req.password());
-            setTokenCookie(response, token);
-            return ResponseEntity.ok(Map.of("message", "Registered successfully"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
-        }
+        String token = authService.register(req.username(), req.email(), req.password());
+        setTokenCookie(response, token);
+        return ResponseEntity.ok(Map.of("message", "Registered successfully"));
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginReq req, HttpServletResponse response) {
-        try {
-            String token = authService.login(req.email(), req.password());
-            setTokenCookie(response, token);
-            return ResponseEntity.ok(Map.of("message", "Login successful"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
-        }
+        String token = authService.login(req.email(), req.password());
+        setTokenCookie(response, token);
+        return ResponseEntity.ok(Map.of("message", "Login successful"));
     }
 
     @PostMapping("/signout")

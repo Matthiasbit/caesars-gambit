@@ -1,9 +1,11 @@
 package com.risiko.contoller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.risiko.exception.AppException;
 import com.risiko.model.Player;
 import com.risiko.model.Room;
 import com.risiko.model.Territorries;
@@ -32,16 +34,13 @@ public class GameController {
     public SseEmitter stream(@PathVariable("roomId") String roomId, @RequestParam(value = "token", required = false) String tokenParam, HttpServletRequest request) {
               
         Room room = roomService.getRoomById(Integer.parseInt(roomId));
-        if (room == null) {
-            throw new RuntimeException("Room not found");
-        }
 
         SseEmitter emitter = new SseEmitter(0L);
         
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
 
         player.setEmitter(emitter);
         emitter.onCompletion(() -> player.setEmitter(null));
@@ -64,51 +63,29 @@ public class GameController {
     @PostMapping("/move")
     public void move(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
-        if (room == null) {
-            throw new RuntimeException("Room not found");
-        }
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
-            throw new IllegalStateException("It's not the current player's turn");
+            throw new AppException(HttpStatus.FORBIDDEN, "It's not the current player's turn");
         }
         Territorries from = Territorries.getTerritorryByDisplayName((String) request.get("from"));
         Territorries to = Territorries.getTerritorryByDisplayName((String) request.get("to"));
         int sum = ((Number) request.get("sum")).intValue();
-        Player current = room.getGamestate().getCurrentPlayer();
-        if (sum <= 0) {
-            throw new IllegalArgumentException("Die Anzahl der zu verschiebenden Truppen muss positiv sein.");
-        }
-        if (!current.hasTerritory(from)) {
-            throw new IllegalArgumentException("Das Quellgebiet gehört nicht dem aktuellen Spieler.");
-        }
-        if (!current.hasTerritory(to)) {
-            throw new IllegalArgumentException("Das Zielgebiet gehört nicht dem aktuellen Spieler.");
-        }
-        if (!from.isAdjacentTo(to)) {
-            throw new IllegalArgumentException("Die Gebiete sind nicht benachbart.");
-        }
-        if (current.getTerritories().get(from) <= sum) {
-            throw new IllegalArgumentException("Nicht genug Truppen zum Verschieben.");
-        }
-        current.moveTroops(from, to, sum);
+        room.getGamestate().move(from, to, sum);
         room.getGamestate().sendGameStateUpdate();
     }
                     
     @PostMapping("/attack")
     public void attack(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
-        if (room == null) {
-            throw new RuntimeException("Room not found");
-        }
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
-            throw new IllegalStateException("It's not the current player's turn");
+            throw new AppException(HttpStatus.FORBIDDEN, "It's not the current player's turn");
         }
         room.getGamestate().attack(Territorries.getTerritorryByDisplayName((String) request.get("from")), Territorries.getTerritorryByDisplayName((String) request.get("to")), (Integer) request.get("sum"));
         room.getGamestate().sendGameStateUpdate();
@@ -117,9 +94,6 @@ public class GameController {
     @PostMapping("/distTroops")
     public void distTroops(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
-        if (room == null) {
-            throw new RuntimeException("Room not found");
-        }
         String to = (String) request.get("to");
         int sum = ((Number) request.get("sum")).intValue();
         room.getGamestate().getPlayerByUserId(authService.getUserFromAuth().getId()).distTroops(Territorries.getTerritorryByDisplayName(to), sum);
@@ -129,15 +103,12 @@ public class GameController {
     @PostMapping("/endTurn")
     public void endTurn(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
-        if (room == null) {
-            throw new RuntimeException("Room not found");
-        }
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Player not found in room"));
+            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
-            throw new IllegalStateException("It's not the current player's turn");
+            throw new AppException(HttpStatus.FORBIDDEN, "It's not the current player's turn");
         }
         room.getGamestate().endMove();
         room.getGamestate().sendGameStateUpdate();
