@@ -31,6 +31,7 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
 
     useEffect(() => {
         if (!gameStateJson) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setTerritories([])
             return
         }
@@ -56,7 +57,7 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
     useEffect(() => {
         const container = svgContainerRef.current
         if (!container) return
-
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSvgLoaded(false)
 
         fetch(KARTE_SVG_PATH)
@@ -95,9 +96,9 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                     region.addEventListener('click', clickHandler)
                     region.addEventListener('mouseenter', mouseEnterHandler)
                     region.addEventListener('mouseleave', mouseLeaveHandler)
-                    ;(region as SVGGraphicsElement & { _gcClickHandler?: () => void })._gcClickHandler = clickHandler
-                    ;(region as SVGGraphicsElement & { _gcMouseEnterHandler?: () => void })._gcMouseEnterHandler = mouseEnterHandler
-                    ;(region as SVGGraphicsElement & { _gcMouseLeaveHandler?: () => void })._gcMouseLeaveHandler = mouseLeaveHandler
+                        ; (region as SVGGraphicsElement & { _gcClickHandler?: () => void })._gcClickHandler = clickHandler
+                        ; (region as SVGGraphicsElement & { _gcMouseEnterHandler?: () => void })._gcMouseEnterHandler = mouseEnterHandler
+                        ; (region as SVGGraphicsElement & { _gcMouseLeaveHandler?: () => void })._gcMouseLeaveHandler = mouseLeaveHandler
                 })
 
                 setSvgLoaded(true)
