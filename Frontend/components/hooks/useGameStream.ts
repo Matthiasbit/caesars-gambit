@@ -21,6 +21,7 @@ export type EventsourceTypes = {
   currentPlayer: string | null;
   continentConquered: { player: string; continent: string } | null;
   attackResult: AttackResult | null;
+  gameEnded: string | null;
   setContinentConquered: (data: { player: string; continent: string } | null) => void;
   setAttackResult: (data: AttackResult | null) => void;
   setPendingDistCount: (count: number | null) => void;
@@ -40,6 +41,7 @@ export function useGameStream(
   const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
   const [continentConquered, setContinentConquered] = useState<{ player: string; continent: string } | null>(null);
   const [attackResult, setAttackResult] = useState<AttackResult | null>(null);
+  const [gameEnded, setGameEnded] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const onGameStartedRef = useRef<() => void | undefined>(onGameStarted);
  
@@ -116,6 +118,11 @@ export function useGameStream(
       }
     });
 
+    eventSource.addEventListener('gameEnded', (e: MessageEvent) => {
+      const winner = e.data.replace(/^Player /, '').replace(/ has won the game!$/, '');
+      setGameEnded(winner);
+    });
+
     eventSource.onerror = (err) => {
       console.error('SSE error', err);
       eventSource.close();
@@ -138,6 +145,7 @@ export function useGameStream(
     currentPlayer,
     continentConquered,
     attackResult,
+    gameEnded,
     setContinentConquered,
     setAttackResult,
     setPendingDistCount,

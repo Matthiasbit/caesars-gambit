@@ -184,13 +184,13 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                         const continentColor = getColorForOwner(continentOwner, ownerColorMap)
                         if (continentColor) {
                             region.setAttribute('stroke', continentColor)
-                            region.setAttribute('stroke-width', '6')
-                            region.setAttribute('fill-opacity', '0.55')
+                            region.setAttribute('stroke-width', '4')
+                            region.setAttribute('fill-opacity', '0.45')
                             region.style.stroke = continentColor
                             region.style.strokeWidth = '6'
                             region.style.fillOpacity = '0.55'
                             if (!region.classList.contains('continent-conquered')) {
-                                region.style.filter = `drop-shadow(0 0 10px ${continentColor}) drop-shadow(0 0 4px ${continentColor})`
+                                region.style.filter = `drop-shadow(0 0 6px ${continentColor}) drop-shadow(0 0 2px ${continentColor})`
                             }
                         }
                     }
