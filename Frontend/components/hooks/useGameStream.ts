@@ -44,6 +44,7 @@ export function useGameStream(
   const [gameEnded, setGameEnded] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const onGameStartedRef = useRef<() => void | undefined>(onGameStarted);
+  const timeoutIdsRef = useRef<NodeJS.Timeout[]>([]);
  
   useEffect(() => {
     onGameStartedRef.current = onGameStarted;
@@ -102,7 +103,8 @@ export function useGameStream(
       try {
         const data: { player: string; continent: string } = JSON.parse(e.data);
         setContinentConquered(data);
-        setTimeout(() => setContinentConquered(null), 5000);
+        const timeoutId = setTimeout(() => setContinentConquered(null), 5000);
+        timeoutIdsRef.current.push(timeoutId);
       } catch (err) {
         console.error('failed parse continentConquered', err);
       }
@@ -112,7 +114,8 @@ export function useGameStream(
       try {
         const data: AttackResult = JSON.parse(e.data);
         setAttackResult(data);
-        setTimeout(() => setAttackResult(null), 6000);
+        const timeoutId = setTimeout(() => setAttackResult(null), 6000);
+        timeoutIdsRef.current.push(timeoutId);
       } catch (err) {
         console.error('failed parse attackResult', err);
       }
@@ -133,6 +136,8 @@ export function useGameStream(
     return () => {
       eventSource.close();
       eventSourceRef.current = null;
+      timeoutIdsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutIdsRef.current = [];
     };
   }, [roomId]);
 

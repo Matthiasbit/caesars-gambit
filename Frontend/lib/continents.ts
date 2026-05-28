@@ -29,12 +29,13 @@ export const CONTINENTS: Record<string, ContinentInfo> = {
       'Aquitane', 'Maureniet', 'Tuskulum', 'Augusta Nemeters',
       'Agualaine', 'Farnovia', 'Montegro', 'Marskem', 'Lisitone',
       'Lauria', 'Tenubra', 'Pergugia', 'Appullen', 'Eraldis', 'Mendria',
+      'Tuku', 'Apilion',
     ],
   },
   SUEDMITTE: {
     bonusTroops: 5,
     territories: [
-      'Apilion', 'Tuku', 'Felsdüne', 'Sizi Küste',
+      'Felsdüne', 'Sizi Küste',
       'Sandmeer', 'Hari', 'Palemo', 'Felsdüne2', 'Ponralma Ufer',
       'Molassno', 'Lucerra', 'Szulionen', 'Trevoia', 'Patatra',
     ],

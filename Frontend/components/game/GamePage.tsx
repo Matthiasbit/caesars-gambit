@@ -225,7 +225,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }
 
     async function handleEndTurn() {
-        if (!eventsource.gameStateJson || eventsource.pendingDistCount) {
+        if (!eventsource.gameStateJson || eventsource.pendingDistCount != null) {
             return
         }
         
