@@ -7,10 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
 import com.risiko.contoller.GameController;
+import com.risiko.model.dto.AttackResultDto;
 import com.risiko.model.dto.ContinentConquered;
 import com.risiko.model.dto.TerritoryStateDto;
 
@@ -50,7 +49,7 @@ public class Gamestate {
             players.get(i).setTerritories(distributedTerritories.get(i));
             players.get(i).setTroopstoDist(INITIAL_TROOPS);
             players.get(i).askDistTroops();
-            
+
         }
         gameController.broadcastEvent(
                 players.stream()
@@ -107,7 +106,7 @@ public class Gamestate {
         }
     }
 
-    public void attack(Territorries fromTerritory, Territorries toTerritory, int sum) {
+    public void attack(Territorries fromTerritory, Territorries toTerritory, int sum) throws InterruptedException {
         if (sum <= 0) {
             throw new IllegalArgumentException("Die Anzahl der angreifenden Truppen muss positiv sein.");
         }
@@ -132,12 +131,11 @@ public class Gamestate {
 
         for (Player p : players) {
             if (p.hasTerritory(toTerritory)) {
-                attackerRolls = dice(Math.min(sum, 3), Math.min(p.getTerritories().get(toTerritory), 2));
-                defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory), 2), Math.min(p.getTerritories().get(toTerritory), 2));
-                int comparisons = Math.min(attackerRolls.size(), defenderRolls.size());
+                attackerRolls = dice(Math.min(sum, 3));
+                defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory), 2));
                 lostTroopsDefence = 0;
                 lostTroopsAttack = 0;
-                for (int i = 0; i < comparisons; i++) {
+                for (int i = 0; i < Math.min(Math.min(p.getTerritories().get(toTerritory), 2), sum - 1); i++) {
                     if (attackerRolls.get(i) > defenderRolls.get(i)) {
                         lostTroopsDefence++;
                     } else {
@@ -147,24 +145,10 @@ public class Gamestate {
                 if (p.defend(toTerritory, lostTroopsDefence) == 0) {
                     territoryWon = true;
                     currentPlayer.getTerritory(toTerritory);
-                    currentPlayer.getTerritories().put(fromTerritory, currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
+                    currentPlayer.getTerritories().put(fromTerritory,
+                            currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
                     currentPlayer.moveTroops(fromTerritory, toTerritory, 1);
-                    List<SseEmitter> emitters = new ArrayList<>();
-                    emitters.add(currentPlayer.emitter);
-                    gameController.broadcastEvent(emitters, "winTerritory", toTerritory + " " + currentPlayer.username);
-                    List<SseEmitter> allEmitters = players.stream()
-                            .map(pl -> pl.emitter)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
-                    for (Continent continent : Continent.values()) {
-                        if (continent.getTerritories().contains(toTerritory)
-                                && continent.isControlledBy(currentPlayer)) {
-                            ContinentConquered event = new ContinentConquered();
-                            event.setPlayer(currentPlayer.username);
-                            event.setContinent(continent.name());
-                            gameController.broadcastEvent(allEmitters, "continentConquered", event);
-                        }
-                    }
+
                 } else {
                     territoryWon = false;
                     p.getTerritories().put(toTerritory, p.getTerritories().get(toTerritory) - lostTroopsDefence);
@@ -174,42 +158,48 @@ public class Gamestate {
             }
         }
 
-        com.risiko.model.dto.AttackResultDto resultDto = new com.risiko.model.dto.AttackResultDto(
+        AttackResultDto resultDto = new AttackResultDto(
                 attackerRolls,
                 defenderRolls,
                 lostTroopsAttack,
                 lostTroopsDefence,
                 fromTerritory.getDisplayName(),
                 toTerritory.getDisplayName(),
-                territoryWon
-        );
+                territoryWon);
+
+        List<SseEmitter> emitters = players.stream()
+                .map(pl -> pl.emitter)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         gameController.broadcastEvent(
-                players.stream()
-                        .map(pl -> pl.emitter)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList()),
+                emitters,
                 "attackResult",
                 resultDto);
+
+                Thread.sleep(100);
+
+        for (Continent continent : Continent.values()) {
+            if (continent.getTerritories().contains(toTerritory)
+                    && continent.isControlledBy(currentPlayer)) {
+                ContinentConquered event = new ContinentConquered();
+                event.setPlayer(currentPlayer.username);
+                event.setContinent(continent.name());
+                gameController.broadcastEvent(emitters, "continentConquered", event);
+            }
+        }
 
         checkIfGameEnded();
     }
 
-    public static List<Integer> dice(int rollCount, int returnCount) {
-        if (rollCount <= 0 || returnCount <= 0) {
-            return new ArrayList<>();
-        }
-        if (returnCount > rollCount) {
-            returnCount = rollCount;
-        }
-
+    public static List<Integer> dice(int rollCount) {
         List<Integer> rolls = new ArrayList<>(rollCount);
         for (int i = 0; i < rollCount; i++) {
             rolls.add(java.util.concurrent.ThreadLocalRandom.current().nextInt(1, 7));
         }
 
         rolls.sort(Collections.reverseOrder());
-        return new ArrayList<>(rolls.subList(0, returnCount));
+        return rolls;
     }
 
     public Player getCurrentPlayer() {

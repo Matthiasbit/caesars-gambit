@@ -8,6 +8,8 @@ interface GameEndedDialogProps {
 
 export function GameEndedDialog({ winner, ownerColorMap }: GameEndedDialogProps) {
     const router = useRouter()
+    const searchParams = new URLSearchParams(window.location.search)
+    const roomId = searchParams.get('roomId')
 
     if (!winner) return null
 
@@ -36,7 +38,7 @@ export function GameEndedDialog({ winner, ownerColorMap }: GameEndedDialogProps)
                     {' hat das Spiel gewonnen!'}
                 </p>
                 <button
-                    onClick={() => router.push('/')}
+                    onClick={() => router.push(`/?roomId=${roomId}`)}
                     style={{
                         padding: '12px 32px',
                         backgroundColor: 'rgba(255,210,60,0.15)',

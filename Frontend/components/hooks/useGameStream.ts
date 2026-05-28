@@ -45,6 +45,8 @@ export function useGameStream(
   const eventSourceRef = useRef<EventSource | null>(null);
   const onGameStartedRef = useRef<() => void | undefined>(onGameStarted);
   const timeoutIdsRef = useRef<NodeJS.Timeout[]>([]);
+  const isAttackResultProcessingRef = useRef(false);
+  const queuedEventsRef = useRef<Array<{ type: string; data: unknown }>>([]);
  
   useEffect(() => {
     onGameStartedRef.current = onGameStarted;
@@ -75,7 +77,43 @@ export function useGameStream(
       onGameStartedRef.current?.();
     });
 
-    eventSource.addEventListener('gameStateUpdate', (e: MessageEvent) => setGameStateJson(e.data));
+    const flushQueuedEvents = () => {
+      const queuedEvents = queuedEventsRef.current;
+      queuedEventsRef.current = [];
+
+      const queuedGameState = queuedEvents
+        .filter((event) => event.type === 'gameStateUpdate')
+        .map((event) => event.data as string)
+        .at(-1);
+
+      const queuedContinentConquered = queuedEvents
+        .filter((event) => event.type === 'continentConquered')
+        .map((event) => event.data as string)
+        .at(-1);
+
+      if (queuedGameState) {
+        setGameStateJson(queuedGameState);
+      }
+
+      if (queuedContinentConquered) {
+        try {
+          const data: { player: string; continent: string } = JSON.parse(queuedContinentConquered);
+          setContinentConquered(data);
+          const timeoutId = setTimeout(() => setContinentConquered(null), 5000);
+          timeoutIdsRef.current.push(timeoutId);
+        } catch (err) {
+          console.error('failed parse queued continentConquered', err);
+        }
+      }
+    };
+
+    eventSource.addEventListener('gameStateUpdate', (e: MessageEvent) => {
+      if (isAttackResultProcessingRef.current) {
+        queuedEventsRef.current.push({ type: 'gameStateUpdate', data: e.data });
+        return;
+      }
+      setGameStateJson(e.data);
+    });
 
     eventSource.addEventListener('askDistTroops', (e: MessageEvent) => {
       try {
@@ -100,6 +138,10 @@ export function useGameStream(
     });
 
     eventSource.addEventListener('continentConquered', (e: MessageEvent) => {
+      if (isAttackResultProcessingRef.current) {
+        queuedEventsRef.current.push({ type: 'continentConquered', data: e.data });
+        return;
+      }
       try {
         const data: { player: string; continent: string } = JSON.parse(e.data);
         setContinentConquered(data);
@@ -114,7 +156,14 @@ export function useGameStream(
       try {
         const data: AttackResult = JSON.parse(e.data);
         setAttackResult(data);
-        const timeoutId = setTimeout(() => setAttackResult(null), 6000);
+
+        isAttackResultProcessingRef.current = true;
+
+        const timeoutId = setTimeout(() => {
+          setAttackResult(null);
+          isAttackResultProcessingRef.current = false;
+          flushQueuedEvents();
+        }, 5500);
         timeoutIdsRef.current.push(timeoutId);
       } catch (err) {
         console.error('failed parse attackResult', err);
@@ -138,6 +187,8 @@ export function useGameStream(
       eventSourceRef.current = null;
       timeoutIdsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
       timeoutIdsRef.current = [];
+      queuedEventsRef.current = [];
+      isAttackResultProcessingRef.current = false;
     };
   }, [roomId]);
 

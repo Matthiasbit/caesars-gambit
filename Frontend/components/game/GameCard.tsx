@@ -21,10 +21,11 @@ export interface GameCardProps {
     selectedRegionId?: string | null
     hoveredRegionId?: string | null
     justConqueredTerritory?: string | null
+    onTerritoryAnimationEnd?: (territoryId: string) => void
     continentConquered?: { player: string; continent: string } | null
 }
 
-export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, continentConquered }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, continentConquered }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
@@ -131,7 +132,6 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
 
         const regions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
 
-        // Build continent → owner map
         const continentOwnerMap = new Map<string, string | null>()
         const continentGroups = new Map<string, TerritoryData[]>()
         territories.forEach(t => {
@@ -163,7 +163,6 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
             region.style.filter = 'none'
             region.style.transition = 'all 0.2s ease'
 
-            // Show all territories with 35% opacity
             if (territory?.owner && territoryColor) {
                 region.setAttribute('fill', territoryColor)
                 region.setAttribute('fill-opacity', '0.35')
@@ -175,7 +174,6 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 region.style.strokeWidth = '1'
             }
 
-            // Continent border: thick colored stroke if continent is fully controlled
             if (territory) {
                 const cont = getContinentForTerritory(territory.territory)
                 if (cont) {
@@ -197,14 +195,17 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 }
             }
             if (region.id === justConqueredTerritory) {
-                region.classList.add('territory-conquered')
-                // Remove animation class after animation completes so it can be replayed
-                setTimeout(() => {
+                const animationEndHandler = () => {
                     region.classList.remove('territory-conquered')
-                }, 1500)
+                    onTerritoryAnimationEnd?.(region.id)
+                    region.removeEventListener('animationend', animationEndHandler)
+                }
+
+                region.removeEventListener('animationend', animationEndHandler)
+                region.classList.add('territory-conquered')
+                region.addEventListener('animationend', animationEndHandler)
             }
 
-            // Highlight selected territory
             if (territory?.territory === selectedRegionId && territoryColor) {
                 region.setAttribute('fill', territoryColor)
                 region.setAttribute('fill-opacity', '0.55')
@@ -227,7 +228,7 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 region.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.6))'
             }
         })
-    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, svgLoaded])
+    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, svgLoaded])
 
     // Continent conquest pulse animation
     useEffect(() => {
@@ -247,13 +248,18 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
             }
         })
         toAnimate.forEach(region => {
+            const animationEndHandler = () => {
+                region.classList.remove('continent-conquered')
+                region.removeEventListener('animationend', animationEndHandler)
+            }
+
+            region.removeEventListener('animationend', animationEndHandler)
             region.classList.remove('continent-conquered')
-            // Force reflow so animation restarts
             void (region as unknown as { offsetWidth: number }).offsetWidth
             region.classList.add('continent-conquered')
-            setTimeout(() => region.classList.remove('continent-conquered'), 2500)
+            region.addEventListener('animationend', animationEndHandler)
         })
-    }, [continentConquered, svgLoaded, territories])
+    }, [continentConquered, onTerritoryAnimationEnd, svgLoaded, territories])
 
     return (
         <>

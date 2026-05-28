@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import { DistributionDialog } from './DistributionDialog'
 import { GameEndedDialog } from './dialogs/GameEndedDialog'
 import { ContinentConqueredDialog } from './dialogs/ContinentConqueredDialog'
+import { GameErrorDialog } from './dialogs/GameErrorDialog'
+import { AttackRollDialog } from './dialogs/AttackRollDialog'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 import { distTroops } from '../api/distTroops'
 import { useGetCurrentUser } from '../api/getCurrentUser'
 import { moveTroops } from '../api/moveTroops'
 import { attack } from '../api/attack'
 import { endTurn } from '../api/endTurn'
-import { EventsourceTypes } from '../hooks/useGameStream'
+import type { ReactDiceRef } from 'react-dice-complete'
+import { AttackResult, EventsourceTypes } from '../hooks/useGameStream'
 import { findWayIfPossible, isAdjacent } from '@/lib/territories'
 
 type GamePageProps = {
@@ -35,10 +38,17 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [moveFrom, setMoveFrom] = useState<string | null>(null)
     const [moveTo, setMoveTo] = useState<string | null>(null)
     const [attackDialog, setAttackDialog] = useState(false)
+    const [gameError, setGameError] = useState<string | null>(null)
     const ownerColorMap = useOwnerColorMap(territories)
     const currentUser = useGetCurrentUser()
     const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+    const [attackRollResult, setAttackRollResult] = useState<AttackResult | null>(null)
+    const [showAttackDice, setShowAttackDice] = useState(false)
+    const [attackRollSequence, setAttackRollSequence] = useState(0)
     const lastConqueredRef = useRef<string | null>(null)
+    const attackDiceRefs = useRef<Array<ReactDiceRef | null>>([])
+    const attackRollTotalRef = useRef(0)
+    const attackRollCountRef = useRef(0)
 
     useEffect(() => {
         if (currentUser.isSuccess && currentUser.data) {
@@ -48,14 +58,42 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }, [currentUser]);
 
     useEffect(() => {
-        if (eventsource.attackResult?.territoryWon && eventsource.attackResult.territoryTo !== lastConqueredRef.current) {
-            lastConqueredRef.current = eventsource.attackResult.territoryTo
-            Promise.resolve().then(() => {
-                setJustConqueredTerritory(eventsource.attackResult?.territoryTo || null)
-                setTimeout(() => setJustConqueredTerritory(null), 1500)
-            })
+        attackDiceRefs.current = []
+        attackRollCountRef.current = 0
+
+        if (!eventsource.attackResult) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setAttackRollResult(null)
+            setShowAttackDice(false)
+            attackRollTotalRef.current = 0
+            return
         }
+
+        const result = eventsource.attackResult
+        attackRollTotalRef.current = result.attackerDice.length + result.defenderDice.length
+        setAttackRollResult(result)
+        setShowAttackDice(true)
+        setAttackRollSequence((prev) => prev + 1)
     }, [eventsource.attackResult]);
+
+    const handleAttackDieRoll = () => {
+        attackRollCountRef.current += 1
+        const nextCount = attackRollCountRef.current
+
+        if (nextCount >= attackRollTotalRef.current && attackRollResult) {
+            setTimeout(() => {
+                setShowAttackDice(false)
+                setAttackRollResult(null)
+
+                if (attackRollResult.territoryWon && attackRollResult.territoryTo !== lastConqueredRef.current) {
+                    lastConqueredRef.current = attackRollResult.territoryTo
+                    setJustConqueredTerritory(attackRollResult.territoryTo)
+                }
+
+                attackRollCountRef.current = 0
+            }, 5000)
+        }
+    }
 
     useEffect(() => {
         if (!eventsource.gameStateJson) return
@@ -92,13 +130,17 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         return isAdjacent(regionClicked, regionId)
     }
 
+    function showGameError(message: string) {
+        setGameError(message)
+    }
+
     function onDistSubmit(territoryId: string) {
         if (!eventsource.gameStateJson || eventsource.pendingDistCount == null) {
             return
         }
         
         if (!territoryOwnedByCurrentUser(territoryId)) {
-            console.log("Cannot distribute to enemy territory")
+            showGameError('Diese Region gehört dir nicht. Bitte wähle ein eigenes Gebiet aus.')
             return;
         }
 
@@ -125,7 +167,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
     async function handleMoveConfirm(num: number) {
         if (!eventsource.gameStateJson || eventsource.currentPlayer !== currentUsername) {
-            console.warn('Game not active or not your turn')
+            showGameError('Der Zug ist gerade nicht möglich. Prüfe, ob das Spiel aktiv ist und es dein Zug ist.')
             return
         }
         
@@ -141,7 +183,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
     async function handleAttackConfirm(num: number) {
         if (!eventsource.gameStateJson || eventsource.currentPlayer !== currentUsername) {
-            console.warn('Game not active or not your turn')
+            showGameError('Der Zug ist gerade nicht möglich. Prüfe, ob das Spiel aktiv ist und es dein Zug ist.')
             return
         }
         
@@ -173,7 +215,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         setHoveredRegionId(null)
 
         if (!eventsource.gameStateJson) {
-            console.warn('Game is not active')
+            showGameError('Das Spiel ist derzeit nicht aktiv.')
             return
         }
 
@@ -189,7 +231,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
         if (!regionClicked) {
             if (!territoryOwnedByCurrentUser(regionId)) {
-                console.log("Cannot select enemy territory")
+                showGameError('Diese Region ist nicht auswählbar.')
                 return
             }
             setRegionClicked(regionId)
@@ -199,7 +241,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         if (regionClicked) {
             if (territoryOwnedByCurrentUser(regionId)) {
                 if (!findWayIfPossible(regionClicked, regionId, territories, currentUsername)) {
-                    console.log('Kein zusammenhängender Weg für Bewegung:', regionClicked, regionId)
+                    showGameError('Für die Bewegung ist kein zusammenhängender Weg vorhanden.')
                     return
                 }
                 setMoveDialog(true)
@@ -211,7 +253,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
             }
 
             if (!isAdjacent(regionClicked, regionId)) {
-                console.log('Nicht benachbart:', regionClicked, regionId)
+                showGameError('Die gewählte Region ist nicht benachbart.')
                 return
             }
 
@@ -238,6 +280,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
 
     return (
         <>
+            <GameErrorDialog isOpen={gameError !== null} message={gameError} onClose={() => setGameError(null)} />
             <GameEndedDialog winner={eventsource.gameEnded} ownerColorMap={ownerColorMap} />
             <ContinentConqueredDialog 
                 data={eventsource.continentConquered} 
@@ -296,7 +339,17 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 selectedRegionId={regionClicked}
                                 hoveredRegionId={hoveredRegionId}
                                 justConqueredTerritory={justConqueredTerritory}
+                                onTerritoryAnimationEnd={(territoryId) => {
+                                    setJustConqueredTerritory((current) => current === territoryId ? null : current)
+                                }}
                                 continentConquered={eventsource.continentConquered}
+                            />
+                            <AttackRollDialog
+                                attackRollResult={attackRollResult}
+                                showAttackDice={showAttackDice}
+                                attackRollSequence={attackRollSequence}
+                                diceRefs={attackDiceRefs}
+                                onDieRoll={handleAttackDieRoll}
                             />
                             <button 
                                 onClick={() => handleEndTurn()}

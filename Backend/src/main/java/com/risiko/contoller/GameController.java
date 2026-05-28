@@ -81,7 +81,7 @@ public class GameController {
     }
                     
     @PostMapping("/attack")
-    public void attack(@RequestBody Map<String, Object> request) {
+    public void attack(@RequestBody Map<String, Object> request) throws InterruptedException {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
