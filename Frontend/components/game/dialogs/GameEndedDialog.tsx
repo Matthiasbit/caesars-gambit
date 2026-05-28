@@ -38,7 +38,7 @@ export function GameEndedDialog({ winner, ownerColorMap }: GameEndedDialogProps)
                     {' hat das Spiel gewonnen!'}
                 </p>
                 <button
-                    onClick={() => router.push(`/?roomId=${roomId}`)}
+                    onClick={() => router.push(`/room/${roomId}`)}
                     style={{
                         padding: '12px 32px',
                         backgroundColor: 'rgba(255,210,60,0.15)',
