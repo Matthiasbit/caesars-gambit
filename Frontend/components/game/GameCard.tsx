@@ -239,6 +239,8 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
 
         const affectedRegions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
         const conquered = continentConquered.continent
+        console.log('🏆 Continent conquered event:', continentConquered)
+        console.log('Looking for continent:', conquered)
         const toAnimate: SVGGraphicsElement[] = []
         affectedRegions.forEach(region => {
             const territory = territories.find(t => t.territory === region.id)

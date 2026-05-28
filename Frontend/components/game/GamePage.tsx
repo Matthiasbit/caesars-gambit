@@ -1,8 +1,9 @@
 import GameCard from './GameCard'
 import { Chat } from '../ui/chat'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { DistributionDialog } from './DistributionDialog'
+import { GameEndedDialog } from './dialogs/GameEndedDialog'
+import { ContinentConqueredDialog } from './dialogs/ContinentConqueredDialog'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 import { distTroops } from '../api/distTroops'
 import { useGetCurrentUser } from '../api/getCurrentUser'
@@ -24,7 +25,6 @@ type TerritoryData = {
 }
 
 export default function GamePage({ roomId, eventsource }: GamePageProps) {
-    const router = useRouter()
     const [regionClicked, setRegionClicked] = useState<string | null>(null)
     const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null)
     const [justConqueredTerritory, setJustConqueredTerritory] = useState<string | null>(null)
@@ -93,9 +93,12 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }
 
     function onDistSubmit(territoryId: string) {
-        if (eventsource.pendingDistCount == null) return
+        if (!eventsource.gameStateJson || eventsource.pendingDistCount == null) {
+            return
+        }
+        
         if (!territoryOwnedByCurrentUser(territoryId)) {
-            console.log("Hier noch was einbauen für UX")
+            console.log("Cannot distribute to enemy territory")
             return;
         }
 
@@ -103,27 +106,53 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }
 
     async function handleDialogConfirm(num: number) {
-        if (eventsource.pendingDistCount == null || !dialogTerritory) return
+        if (!eventsource.gameStateJson || !eventsource.pendingDistCount || !dialogTerritory) {
+            return
+        }
 
-        await distTroops({ sum: num, to: dialogTerritory, roomId });
-        // @ts-expect-error - kein Plan warum er hier rumheult
-        eventsource.setPendingDistCount((prev: number | null) => {
-            const remaining = prev !== null ? prev - num : null
-            return remaining !== null ? remaining > 0 ? remaining : null : null
-        })
-
-        setDialogTerritory(null)
+        try {
+            await distTroops({ sum: num, to: dialogTerritory, roomId });
+            // @ts-expect-error - kein Plan warum er hier rumheult
+            eventsource.setPendingDistCount((prev: number | null) => {
+                const remaining = prev !== null ? prev - num : null
+                return remaining !== null ? remaining > 0 ? remaining : null : null
+            })
+            setDialogTerritory(null)
+        } catch (err) {
+            console.error('Distribution failed:', err)
+        }
     }
 
     async function handleMoveConfirm(num: number) {
+        if (!eventsource.gameStateJson || eventsource.currentPlayer !== currentUsername) {
+            console.warn('Game not active or not your turn')
+            return
+        }
+        
         setMoveDialog(false)
-        await moveTroops({ sum: num, from: moveFrom!, to: moveTo!, roomId });
+        
+        try {
+            await moveTroops({ sum: num, from: moveFrom!, to: moveTo!, roomId });
+        } catch (err) {
+            console.error('Move failed:', err)
+            setMoveDialog(true) 
+        }
     }
 
     async function handleAttackConfirm(num: number) {
+        if (!eventsource.gameStateJson || eventsource.currentPlayer !== currentUsername) {
+            console.warn('Game not active or not your turn')
+            return
+        }
+        
         setAttackDialog(false)
-        await attack({ sum: num, from: moveFrom!, to: moveTo!, roomId });
-
+        
+        try {
+            await attack({ sum: num, from: moveFrom!, to: moveTo!, roomId });
+        } catch (err) {
+            console.error('Attack failed:', err)
+            setAttackDialog(true) 
+        }
     }
 
     function handleRegionHover(regionId: string | null) {
@@ -143,8 +172,8 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     function handleRegionClick(regionId: string) {
         setHoveredRegionId(null)
 
-        if (!regionClicked && !territoryOwnedByCurrentUser(regionId)) {
-            console.log("Hier einbauen, dass nicht eigenes Gebiert ist")
+        if (!eventsource.gameStateJson) {
+            console.warn('Game is not active')
             return
         }
 
@@ -154,8 +183,19 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         }
 
         if (regionClicked === regionId) {
+            setRegionClicked(null)
             return;
         }
+
+        if (!regionClicked) {
+            if (!territoryOwnedByCurrentUser(regionId)) {
+                console.log("Cannot select enemy territory")
+                return
+            }
+            setRegionClicked(regionId)
+            return
+        }
+
         if (regionClicked) {
             if (territoryOwnedByCurrentUser(regionId)) {
                 if (!findWayIfPossible(regionClicked, regionId, territories, currentUsername)) {
@@ -182,81 +222,27 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
             setRegionClicked(null)
             return;
         }
-        console.log('Region angeklickt:', regionId, regionClicked)
-        setRegionClicked(regionId)
     }
 
     async function handleEndTurn() {
-        if (eventsource.pendingDistCount) {
+        if (!eventsource.gameStateJson || eventsource.pendingDistCount) {
             return
         }
-        await endTurn(roomId);
+        
+        try {
+            await endTurn(roomId);
+        } catch (err) {
+            console.error('End turn failed:', err)
+        }
     }
 
     return (
         <>
-            {eventsource.gameEnded && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4000 }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)' }} />
-                    <div style={{
-                        position: 'relative',
-                        zIndex: 4001,
-                        backgroundColor: '#07142a',
-                        border: '2px solid rgba(255,210,60,0.7)',
-                        boxShadow: '0 0 40px rgba(255,210,60,0.35), 0 0 80px rgba(255,210,60,0.15)',
-                        borderRadius: '16px',
-                        padding: '52px 60px',
-                        textAlign: 'center',
-                        color: 'white',
-                        maxWidth: '520px',
-                        width: '90%',
-                    }}>
-                        <div style={{ fontSize: '56px', marginBottom: '12px' }}>👑</div>
-                        <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px', color: 'rgba(255,210,60,0.95)' }}>Spiel beendet!</h1>
-                        <p style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(189,215,255,0.85)' }}>
-                            <span style={{ color: getColorForOwner(eventsource.gameEnded, ownerColorMap), fontWeight: 700, fontSize: '24px' }}>
-                                {eventsource.gameEnded}
-                            </span>
-                            {' hat das Spiel gewonnen!'}
-                        </p>
-                        <button
-                            onClick={() => router.push('/')}
-                            style={{
-                                padding: '12px 32px',
-                                backgroundColor: 'rgba(255,210,60,0.15)',
-                                border: '1px solid rgba(255,210,60,0.6)',
-                                borderRadius: '10px',
-                                color: 'rgba(255,210,60,0.95)',
-                                fontWeight: 600,
-                                fontSize: '16px',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Zurück zur Lobby
-                        </button>
-                    </div>
-                </div>
-            )}
-            {eventsource.continentConquered && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
-                    <div style={{ position: 'relative', zIndex: 3001, backgroundColor: '#0b1220', border: '2px solid rgba(59,130,246,0.5)', borderRadius: '12px', padding: '40px', textAlign: 'center', color: 'white', maxWidth: '500px' }}>
-                        <h1 className="text-3xl font-bold mb-4"> Kontinent erobert!</h1>
-                        <p className="text-xl mb-6">
-                            <span style={{ color: 'rgba(59,130,246,1)', fontWeight: 'bold' }}>{eventsource.continentConquered.player}</span>
-                            {' hat den Kontinent '}
-                            <span style={{ color: 'rgb(255, 255, 255)', fontWeight: 'bold' }}>{eventsource.continentConquered.continent}</span>
-                            {' erobert!'}
-                        </p>
-                        <button 
-                            onClick={() => eventsource.setContinentConquered(null)}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
-                        >
-                            OK
-                        </button>
-                    </div>
-                </div>
-            )}
+            <GameEndedDialog winner={eventsource.gameEnded} ownerColorMap={ownerColorMap} />
+            <ContinentConqueredDialog 
+                data={eventsource.continentConquered} 
+                onClose={() => eventsource.setContinentConquered(null)}
+            />
             {eventsource.pendingDistCount != null && (
                 <div style={{ position: 'fixed', right: 16, top: 16, zIndex: 2000 }}>
                     <div className="rounded bg-[#0b1220] border border-[rgba(59,130,246,0.25)] px-4 py-3 text-white shadow">

@@ -13,7 +13,7 @@ export const CONTINENTS: Record<string, ContinentInfo> = {
     territories: [
       'Toscana + Unburia', 'Florenzz', 'Forum Vatlkanstadt', 'Varensia',
       'Porrugiert', 'Sandfelsen', 'ApeniniiTal', 'Palerno', 'Hairon',
-      'Mattra', 'Horthital', 'Forouza',
+      'Mattra', 'Horthital', 'Forouza', 'Silber-Bucht',
     ],
   },
   WESTKUESTE: {
@@ -34,7 +34,7 @@ export const CONTINENTS: Record<string, ContinentInfo> = {
   SUEDMITTE: {
     bonusTroops: 5,
     territories: [
-      'Silber-Bucht', 'Apilion', 'Tuku', 'Felsdüne', 'Sizi Küste',
+      'Apilion', 'Tuku', 'Felsdüne', 'Sizi Küste',
       'Sandmeer', 'Hari', 'Palemo', 'Felsdüne2', 'Ponralma Ufer',
       'Molassno', 'Lucerra', 'Szulionen', 'Trevoia', 'Patatra',
     ],
