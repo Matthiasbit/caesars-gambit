@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
 import GameCard from './GameCard'
 
 vi.mock('next/image', () => ({
@@ -34,6 +34,50 @@ describe('GameCard', () => {
     region?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     
     expect(mockClick).toHaveBeenCalledWith('region-1')
+  })
+
+  it('should highlight the selected region with the owner color', async () => {
+    const mockGameState = JSON.stringify([
+      { territory: 'region-1', owner: 'Alice', troops: 5 },
+    ])
+
+    const { container } = render(
+      <GameCard gameStateJson={mockGameState} selectedRegionId="region-1" />
+    )
+
+    await waitFor(() => {
+      const region = container.querySelector('path#region-1') as SVGElement
+
+      expect(region).toBeTruthy()
+      expect(region.style.fill).toBe('rgb(230, 25, 75)')
+      expect(region.style.fillOpacity).toBe('0.55')
+      expect(region.style.strokeWidth).toBe('3')
+      expect(region.getAttribute('fill')).toBe('#e6194b')
+      expect(region.getAttribute('fill-opacity')).toBe('0.55')
+      expect(region.getAttribute('stroke-width')).toBe('3')
+    })
+  })
+
+  it('should preview a hovered target with the target owner color', async () => {
+    const mockGameState = JSON.stringify([
+      { territory: 'region-1', owner: 'Alice', troops: 5 },
+    ])
+
+    const { container } = render(
+      <GameCard gameStateJson={mockGameState} hoveredRegionId="region-1" />
+    )
+
+    await waitFor(() => {
+      const region = container.querySelector('path#region-1') as SVGElement
+
+      expect(region).toBeTruthy()
+      expect(region.style.fill).toBe('rgb(230, 25, 75)')
+      expect(region.style.fillOpacity).toBe('0.35')
+      expect(region.style.strokeWidth).toBe('2')
+      expect(region.getAttribute('fill')).toBe('#e6194b')
+      expect(region.getAttribute('fill-opacity')).toBe('0.35')
+      expect(region.getAttribute('stroke-width')).toBe('2')
+    })
   })
 
   it('should handle SVG load error', async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TerritoryLabels } from './TerritoryLabels'
 
 describe('TerritoryLabels', () => {
@@ -46,6 +46,28 @@ describe('TerritoryLabels', () => {
     
     await waitFor(() => {
       expect(screen.getByText('10')).toBeInTheDocument()
+    })
+  })
+
+  it('should notify hover changes for territory labels', async () => {
+    const onTerritoryHover = vi.fn()
+
+    const { container } = render(
+      <TerritoryLabels
+        gameStateJson={JSON.stringify(mockGameState)}
+        onTerritoryHover={onTerritoryHover}
+      />
+    )
+
+    await waitFor(() => expect(screen.getByText('5')).toBeInTheDocument())
+
+    const territoryGroup = container.querySelector('svg g') as SVGGElement
+    fireEvent.mouseEnter(territoryGroup)
+    fireEvent.mouseLeave(territoryGroup)
+
+    await waitFor(() => {
+      expect(onTerritoryHover).toHaveBeenCalledWith('Palatin')
+      expect(onTerritoryHover).toHaveBeenCalledWith(null)
     })
   })
 })

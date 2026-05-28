@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Enum of territories. Enum constant names are sanitized (Java identifier safe).
+ * Enum of territories. Enum constant names are sanitized (Java identifier
+ * safe).
  * Use {@link #getDisplayName()} to get the original label as shown in the SVG.
  */
 public enum Territorries {
@@ -166,7 +167,7 @@ public enum Territorries {
         connect(KRAILDUNE, MAL_GOLF_TARENT);
         connect(KRAILDUNE, SIZILLEBT_ERGANSEKUR);
         connect(LATERANO, PALATIN);
-        connect(LATERANO,TOSCANA_UND_UNBURIA);
+        connect(LATERANO, TOSCANA_UND_UNBURIA);
         connect(LAURIA, MONTEGRO);
         connect(LAURIA, TENUBRA);
         connect(LISITONE, MARSKEM);
@@ -202,6 +203,7 @@ public enum Territorries {
         connect(PALEMO, SIZI_KUESTE);
         connect(PALEMO, SZULIONEN);
         connect(PALERNO, SILBER_BUCHT);
+        connect(PALERNO, APENINII_TAL);
         connect(PATATRA, TREVOIA);
         connect(PONRALMA, RENIAKUSTE);
         connect(PONRALMA, TRENTAKUSTE);
@@ -231,5 +233,22 @@ public enum Territorries {
             }
         }
         return null;
+    }
+
+    public static boolean findWayIfPossible(Territorries from, Territorries to, Set<Territorries> visited, Player player) {
+        if (from == to) {
+            return true;
+        }
+        visited.add(from);
+        for (Territorries neighbor : from.getNeighbors()) {
+            if (player.getTerritories().containsKey(neighbor)) {
+                if (!visited.contains(neighbor)) {
+                    if (findWayIfPossible(neighbor, to, visited, player)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

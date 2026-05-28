@@ -1,22 +1,64 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import styles from './GameCard.module.css'
 import { TerritoryLabels } from './TerritoryLabels'
+import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 
 const KARTE_SVG_PATH = '/assets/Karte-neutral.svg'
 const KARTE_FABIG_PATH = '/assets/Karte-fabig.jpg'
 
-export interface GameCardProps {
-    onRegionClick?: (regionId: string) => void
-    gameStateJson?: string | null
+interface TerritoryData {
+    territory: string
+    owner: string | null
+    troops: number
 }
 
-export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps) {
+export interface GameCardProps {
+    onRegionClick?: (regionId: string) => void
+    onRegionHover?: (regionId: string | null) => void
+    gameStateJson?: string | null
+    selectedRegionId?: string | null
+    hoveredRegionId?: string | null
+}
+
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
+    const onRegionClickRef = useRef(onRegionClick)
+    const onRegionHoverRef = useRef(onRegionHover)
+    const [territories, setTerritories] = useState<TerritoryData[]>([])
+    const [svgLoaded, setSvgLoaded] = useState(false)
+    const ownerColorMap = useOwnerColorMap(territories)
+
+    useEffect(() => {
+        if (!gameStateJson) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setTerritories([])
+            return
+        }
+
+        try {
+            const parsed = JSON.parse(gameStateJson)
+            if (Array.isArray(parsed)) {
+                setTerritories(parsed)
+            }
+        } catch (err) {
+            console.error('Fehler beim Parsen von gameStateJson:', err)
+        }
+    }, [gameStateJson])
+
+    useEffect(() => {
+        onRegionClickRef.current = onRegionClick
+    }, [onRegionClick])
+
+    useEffect(() => {
+        onRegionHoverRef.current = onRegionHover
+    }, [onRegionHover])
 
     useEffect(() => {
         const container = svgContainerRef.current
         if (!container) return
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSvgLoaded(false)
 
         fetch(KARTE_SVG_PATH)
             .then((res) => res.text())
@@ -29,7 +71,7 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
                 svg.setAttribute('width', '100%')
                 svg.setAttribute('height', '100%')
                 svg.style.display = 'block'
-                svg.style.opacity = '0'
+                svg.style.opacity = '1'
                 svg.style.pointerEvents = 'auto'
 
                 const regions =
@@ -40,12 +82,26 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
                     region.style.pointerEvents = 'auto'
 
                     const clickHandler = () => {
-                        onRegionClick?.(region.id)
+                        onRegionClickRef.current?.(region.id)
+                    }
+
+                    const mouseEnterHandler = () => {
+                        onRegionHoverRef.current?.(region.id)
+                    }
+
+                    const mouseLeaveHandler = () => {
+                        onRegionHoverRef.current?.(null)
                     }
 
                     region.addEventListener('click', clickHandler)
-                    ;(region as SVGGraphicsElement & { _gcClickHandler?: () => void })._gcClickHandler = clickHandler
+                    region.addEventListener('mouseenter', mouseEnterHandler)
+                    region.addEventListener('mouseleave', mouseLeaveHandler)
+                        ; (region as SVGGraphicsElement & { _gcClickHandler?: () => void })._gcClickHandler = clickHandler
+                        ; (region as SVGGraphicsElement & { _gcMouseEnterHandler?: () => void })._gcMouseEnterHandler = mouseEnterHandler
+                        ; (region as SVGGraphicsElement & { _gcMouseLeaveHandler?: () => void })._gcMouseLeaveHandler = mouseLeaveHandler
                 })
+
+                setSvgLoaded(true)
 
                 return () => {
                     regions.forEach((region) => {
@@ -59,7 +115,57 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
             .catch((err) => {
                 console.error('SVG konnte nicht geladen werden:', err)
             })
-    }, [onRegionClick])
+    }, [])
+
+    useEffect(() => {
+        if (!svgLoaded) return
+
+        const container = svgContainerRef.current
+        if (!container) return
+
+        const svg = container.querySelector('svg')
+        if (!svg) return
+
+        const regions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
+
+        regions.forEach((region) => {
+            const territory = territories.find((entry) => entry.territory === region.id)
+            const territoryColor = territory ? getColorForOwner(territory.owner, ownerColorMap) : null
+
+            region.setAttribute('fill', 'transparent')
+            region.setAttribute('fill-opacity', '0')
+            region.setAttribute('stroke', 'transparent')
+            region.setAttribute('stroke-width', '0')
+            region.style.fill = 'transparent'
+            region.style.fillOpacity = '0'
+            region.style.stroke = 'transparent'
+            region.style.strokeWidth = '0'
+            region.style.filter = 'none'
+            region.style.transition = 'all 0.2s ease'
+
+            if (territory?.owner && territoryColor && territory.territory === selectedRegionId) {
+                region.setAttribute('fill', territoryColor)
+                region.setAttribute('fill-opacity', '0.55')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.95)')
+                region.setAttribute('stroke-width', '3')
+                region.style.fill = territoryColor
+                region.style.fillOpacity = '0.55'
+                region.style.stroke = 'rgba(255,255,255,0.95)'
+                region.style.strokeWidth = '3'
+                region.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.45))'
+            } else if (territory?.owner && territoryColor && territory.territory === hoveredRegionId) {
+                region.setAttribute('fill', territoryColor)
+                region.setAttribute('fill-opacity', '0.35')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.9)')
+                region.setAttribute('stroke-width', '2')
+                region.style.fill = territoryColor
+                region.style.fillOpacity = '0.35'
+                region.style.stroke = 'rgba(255,255,255,0.9)'
+                region.style.strokeWidth = '2'
+                region.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.35))'
+            }
+        })
+    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, svgLoaded])
 
     return (
         <>
@@ -74,8 +180,16 @@ export default function GameCard({ onRegionClick, gameStateJson }: GameCardProps
                     style={{ width: '100%', height: '100%' }}
                 />
 
-                <div ref={svgContainerRef} className={styles.mapSvgContainer} />
-                <TerritoryLabels gameStateJson={gameStateJson || null} onTerritoryButtonClick={onRegionClick}  />
+                <div
+                    ref={svgContainerRef}
+                    className={styles.mapSvgContainer}
+                    onMouseLeave={() => onRegionHoverRef.current?.(null)}
+                />
+                <TerritoryLabels
+                    gameStateJson={gameStateJson || null}
+                    onTerritoryButtonClick={onRegionClick}
+                    onTerritoryHover={onRegionHover}
+                />
             </div>
         </>
     )
