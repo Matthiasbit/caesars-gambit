@@ -72,11 +72,11 @@ describe('GameCard', () => {
 
       expect(region).toBeTruthy()
       expect(region.style.fill).toBe('rgb(230, 25, 75)')
-      expect(region.style.fillOpacity).toBe('0.35')
-      expect(region.style.strokeWidth).toBe('2')
+      expect(region.style.fillOpacity).toBe('0.75')
+      expect(region.style.strokeWidth).toBe('3')
       expect(region.getAttribute('fill')).toBe('#e6194b')
-      expect(region.getAttribute('fill-opacity')).toBe('0.35')
-      expect(region.getAttribute('stroke-width')).toBe('2')
+      expect(region.getAttribute('fill-opacity')).toBe('0.75')
+      expect(region.getAttribute('stroke-width')).toBe('3')
     })
   })
 

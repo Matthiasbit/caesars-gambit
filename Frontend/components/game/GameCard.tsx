@@ -3,6 +3,7 @@ import Image from 'next/image'
 import styles from './GameCard.module.css'
 import { TerritoryLabels } from './TerritoryLabels'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
+import { getContinentForTerritory } from '@/lib/continents'
 
 const KARTE_SVG_PATH = '/assets/Karte-neutral.svg'
 const KARTE_FABIG_PATH = '/assets/Karte-fabig.jpg'
@@ -19,9 +20,12 @@ export interface GameCardProps {
     gameStateJson?: string | null
     selectedRegionId?: string | null
     hoveredRegionId?: string | null
+    justConqueredTerritory?: string | null
+    onTerritoryAnimationEnd?: (territoryId: string) => void
+    continentConquered?: { player: string; continent: string } | null
 }
 
-export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, continentConquered }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
@@ -128,6 +132,22 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
 
         const regions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
 
+        const continentOwnerMap = new Map<string, string | null>()
+        const continentGroups = new Map<string, TerritoryData[]>()
+        territories.forEach(t => {
+            const cont = getContinentForTerritory(t.territory)
+            if (cont) {
+                const group = continentGroups.get(cont) ?? []
+                group.push(t)
+                continentGroups.set(cont, group)
+            }
+        })
+        continentGroups.forEach((terrs, cont) => {
+            const firstOwner = terrs[0]?.owner
+            const controlled = !!firstOwner && terrs.every(t => t.owner === firstOwner)
+            continentOwnerMap.set(cont, controlled ? firstOwner : null)
+        })
+
         regions.forEach((region) => {
             const territory = territories.find((entry) => entry.territory === region.id)
             const territoryColor = territory ? getColorForOwner(territory.owner, ownerColorMap) : null
@@ -143,7 +163,50 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
             region.style.filter = 'none'
             region.style.transition = 'all 0.2s ease'
 
-            if (territory?.owner && territoryColor && territory.territory === selectedRegionId) {
+            if (territory?.owner && territoryColor) {
+                region.setAttribute('fill', territoryColor)
+                region.setAttribute('fill-opacity', '0.35')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.7)')
+                region.setAttribute('stroke-width', '1')
+                region.style.fill = territoryColor
+                region.style.fillOpacity = '0.35'
+                region.style.stroke = 'rgba(255,255,255,0.7)'
+                region.style.strokeWidth = '1'
+            }
+
+            if (territory) {
+                const cont = getContinentForTerritory(territory.territory)
+                if (cont) {
+                    const continentOwner = continentOwnerMap.get(cont)
+                    if (continentOwner) {
+                        const continentColor = getColorForOwner(continentOwner, ownerColorMap)
+                        if (continentColor) {
+                            region.setAttribute('stroke', continentColor)
+                            region.setAttribute('stroke-width', '4')
+                            region.setAttribute('fill-opacity', '0.45')
+                            region.style.stroke = continentColor
+                            region.style.strokeWidth = '6'
+                            region.style.fillOpacity = '0.55'
+                            if (!region.classList.contains('continent-conquered')) {
+                                region.style.filter = `drop-shadow(0 0 6px ${continentColor}) drop-shadow(0 0 2px ${continentColor})`
+                            }
+                        }
+                    }
+                }
+            }
+            if (region.id === justConqueredTerritory) {
+                const animationEndHandler = () => {
+                    region.classList.remove('territory-conquered')
+                    onTerritoryAnimationEnd?.(region.id)
+                    region.removeEventListener('animationend', animationEndHandler)
+                }
+
+                region.removeEventListener('animationend', animationEndHandler)
+                region.classList.add('territory-conquered')
+                region.addEventListener('animationend', animationEndHandler)
+            }
+
+            if (territory?.territory === selectedRegionId && territoryColor) {
                 region.setAttribute('fill', territoryColor)
                 region.setAttribute('fill-opacity', '0.55')
                 region.setAttribute('stroke', 'rgba(255,255,255,0.95)')
@@ -155,17 +218,48 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 region.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.45))'
             } else if (territory?.owner && territoryColor && territory.territory === hoveredRegionId) {
                 region.setAttribute('fill', territoryColor)
-                region.setAttribute('fill-opacity', '0.35')
-                region.setAttribute('stroke', 'rgba(255,255,255,0.9)')
-                region.setAttribute('stroke-width', '2')
+                region.setAttribute('fill-opacity', '0.75')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.98)')
+                region.setAttribute('stroke-width', '3')
                 region.style.fill = territoryColor
-                region.style.fillOpacity = '0.35'
-                region.style.stroke = 'rgba(255,255,255,0.9)'
-                region.style.strokeWidth = '2'
-                region.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.35))'
+                region.style.fillOpacity = '0.75'
+                region.style.stroke = 'rgba(255,255,255,0.98)'
+                region.style.strokeWidth = '3'
+                region.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.6))'
             }
         })
-    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, svgLoaded])
+    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, svgLoaded])
+
+    // Continent conquest pulse animation
+    useEffect(() => {
+        if (!continentConquered || !svgLoaded) return
+        const container = svgContainerRef.current
+        if (!container) return
+        const svg = container.querySelector('svg')
+        if (!svg) return
+
+        const affectedRegions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
+        const conquered = continentConquered.continent
+        const toAnimate: SVGGraphicsElement[] = []
+        affectedRegions.forEach(region => {
+            const territory = territories.find(t => t.territory === region.id)
+            if (territory && getContinentForTerritory(territory.territory) === conquered) {
+                toAnimate.push(region)
+            }
+        })
+        toAnimate.forEach(region => {
+            const animationEndHandler = () => {
+                region.classList.remove('continent-conquered')
+                region.removeEventListener('animationend', animationEndHandler)
+            }
+
+            region.removeEventListener('animationend', animationEndHandler)
+            region.classList.remove('continent-conquered')
+            void (region as unknown as { offsetWidth: number }).offsetWidth
+            region.classList.add('continent-conquered')
+            region.addEventListener('animationend', animationEndHandler)
+        })
+    }, [continentConquered, onTerritoryAnimationEnd, svgLoaded, territories])
 
     return (
         <>

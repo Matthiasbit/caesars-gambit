@@ -114,4 +114,8 @@ public class Player {
     public int getTroopstoDist() {
         return troopstoDist;
     }
+
+    public String getUsername() {
+        return username;
+    }
 }

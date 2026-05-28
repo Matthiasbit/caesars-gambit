@@ -17,6 +17,7 @@ export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
     gameStateJson,
     onTerritoryButtonClick,
     onTerritoryHover,
+    
 }) => {
     const [territories, setTerritories] = useState<TerritoryData[]>([])
 

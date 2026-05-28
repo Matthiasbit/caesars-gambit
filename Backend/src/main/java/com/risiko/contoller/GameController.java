@@ -17,6 +17,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+
 
 @RestController
 @RequestMapping("/api/game")
@@ -52,6 +54,7 @@ public class GameController {
             if(room.isGameStarted()) {
                 room.getGamestate().sendGameStateUpdate();
                 player.askDistTroops();
+                broadcastEvent(Collections.singletonList(emitter), "currentPlayer", room.getGamestate().getCurrentPlayer().getUsername());
             }
         } catch (IOException e) {
             emitter.completeWithError(e);
@@ -78,7 +81,7 @@ public class GameController {
     }
                     
     @PostMapping("/attack")
-    public void attack(@RequestBody Map<String, Object> request) {
+    public void attack(@RequestBody Map<String, Object> request) throws InterruptedException {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
         Player player = room.getPlayers().stream()
             .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())

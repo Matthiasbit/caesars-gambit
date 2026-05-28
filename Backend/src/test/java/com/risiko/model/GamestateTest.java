@@ -32,21 +32,21 @@ class GamestateTest {
 
         @Test
         void anzahlRueckgabewerteKorrekt() {
-            List<Integer> result = Gamestate.dice(3, 2);
+            List<Integer> result = Gamestate.dice(3);
 
-            assertThat(result).hasSize(2);
+            assertThat(result).hasSize(3);
         }
 
         @Test
         void alleWerteZwischenEinsUndSechs() {
-            List<Integer> result = Gamestate.dice(10, 10);
+            List<Integer> result = Gamestate.dice(10);
 
             assertThat(result).allMatch(v -> v >= 1 && v <= 6);
         }
 
         @Test
         void ergebnisseAbsteigendSortiert() {
-            List<Integer> result = Gamestate.dice(5, 3);
+            List<Integer> result = Gamestate.dice(5);
 
             for (int i = 0; i < result.size() - 1; i++) {
                 assertThat(result.get(i)).isGreaterThanOrEqualTo(result.get(i + 1));
@@ -55,34 +55,24 @@ class GamestateTest {
 
         @Test
         void rollCountNullGibtLeereListeZurueck() {
-            assertThat(Gamestate.dice(0, 2)).isEmpty();
-        }
-
-        @Test
-        void returnCountNullGibtLeereListeZurueck() {
-            assertThat(Gamestate.dice(3, 0)).isEmpty();
+            assertThat(Gamestate.dice(0)).isEmpty();
         }
 
         @Test
         void returnCountGroesserAlsRollCount_wirdAufRollCountBegrenzt() {
-            List<Integer> result = Gamestate.dice(2, 5);
+            List<Integer> result = Gamestate.dice(2);
 
             assertThat(result).hasSize(2);
         }
 
         @Test
         void einWurf_gibtEinenWertZurueck() {
-            assertThat(Gamestate.dice(1, 1)).hasSize(1);
+            assertThat(Gamestate.dice(1)).hasSize(1);
         }
 
         @Test
         void negativerRollCount_gibtLeereListeZurueck() {
-            assertThat(Gamestate.dice(-1, 2)).isEmpty();
-        }
-
-        @Test
-        void negativerReturnCount_gibtLeereListeZurueck() {
-            assertThat(Gamestate.dice(3, -1)).isEmpty();
+            assertThat(Gamestate.dice(-1)).isEmpty();
         }
     }
 

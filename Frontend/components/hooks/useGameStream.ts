@@ -2,21 +2,35 @@ import { useEffect, useRef, useState } from 'react';
 
 type ChatMessage = { username: string; message: string };
 
+export type AttackResult = {
+  attackerDice: number[];
+  defenderDice: number[];
+  lostTroopsAttack: number;
+  lostTroopsDefense: number;
+  territoryFrom: string;
+  territoryTo: string;
+  territoryWon: boolean;
+};
+
 export type EventsourceTypes = {
-  playerNames: string[]; 
-    chatMessages: ChatMessage[];
-    gameStarted: boolean;
-    gameStateJson: string | null;
-    pendingDistCount: number | null;
-    setPendingDistCount: (count: number | null) => void;
-    setGameStarted: (started: boolean) => void;
+  playerNames: string[];
+  chatMessages: ChatMessage[];
+  gameStarted: boolean;
+  gameStateJson: string | null;
+  pendingDistCount: number | null;
+  currentPlayer: string | null;
+  continentConquered: { player: string; continent: string } | null;
+  attackResult: AttackResult | null;
+  gameEnded: string | null;
+  setContinentConquered: (data: { player: string; continent: string } | null) => void;
+  setAttackResult: (data: AttackResult | null) => void;
+  setPendingDistCount: (count: number | null) => void;
+  setGameStarted: (started: boolean) => void;
 
 };
 
 export function useGameStream(
   roomId?: string,
-  currentUsername?: string | null,
-  onYourTurn?: () => void,
   onGameStarted?: () => void
 ) {
   const [playerNames, setPlayerNames] = useState<string[]>([]);
@@ -24,19 +38,16 @@ export function useGameStream(
   const [gameStarted, setGameStarted] = useState(false);
   const [gameStateJson, setGameStateJson] = useState<string | null>(null);
   const [pendingDistCount, setPendingDistCount] = useState<number | null>(null);
+  const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
+  const [continentConquered, setContinentConquered] = useState<{ player: string; continent: string } | null>(null);
+  const [attackResult, setAttackResult] = useState<AttackResult | null>(null);
+  const [gameEnded, setGameEnded] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const currentUsernameRef = useRef<string | null>(currentUsername);
-  const onYourTurnRef = useRef<() => void | undefined>(onYourTurn);
   const onGameStartedRef = useRef<() => void | undefined>(onGameStarted);
-
-  useEffect(() => {
-    currentUsernameRef.current = currentUsername;
-  }, [currentUsername]);
-
-  useEffect(() => {
-    onYourTurnRef.current = onYourTurn;
-  }, [onYourTurn]);
-
+  const timeoutIdsRef = useRef<NodeJS.Timeout[]>([]);
+  const isAttackResultProcessingRef = useRef(false);
+  const queuedEventsRef = useRef<Array<{ type: string; data: unknown }>>([]);
+ 
   useEffect(() => {
     onGameStartedRef.current = onGameStarted;
   }, [onGameStarted]);
@@ -66,7 +77,43 @@ export function useGameStream(
       onGameStartedRef.current?.();
     });
 
-    eventSource.addEventListener('gameStateUpdate', (e: MessageEvent) => setGameStateJson(e.data));
+    const flushQueuedEvents = () => {
+      const queuedEvents = queuedEventsRef.current;
+      queuedEventsRef.current = [];
+
+      const queuedGameState = queuedEvents
+        .filter((event) => event.type === 'gameStateUpdate')
+        .map((event) => event.data as string)
+        .at(-1);
+
+      const queuedContinentConquered = queuedEvents
+        .filter((event) => event.type === 'continentConquered')
+        .map((event) => event.data as string)
+        .at(-1);
+
+      if (queuedGameState) {
+        setGameStateJson(queuedGameState);
+      }
+
+      if (queuedContinentConquered) {
+        try {
+          const data: { player: string; continent: string } = JSON.parse(queuedContinentConquered);
+          setContinentConquered(data);
+          const timeoutId = setTimeout(() => setContinentConquered(null), 5000);
+          timeoutIdsRef.current.push(timeoutId);
+        } catch (err) {
+          console.error('failed parse queued continentConquered', err);
+        }
+      }
+    };
+
+    eventSource.addEventListener('gameStateUpdate', (e: MessageEvent) => {
+      if (isAttackResultProcessingRef.current) {
+        queuedEventsRef.current.push({ type: 'gameStateUpdate', data: e.data });
+        return;
+      }
+      setGameStateJson(e.data);
+    });
 
     eventSource.addEventListener('askDistTroops', (e: MessageEvent) => {
       try {
@@ -87,9 +134,45 @@ export function useGameStream(
     });
 
     eventSource.addEventListener('currentPlayer', (e: MessageEvent) => {
-      if (currentUsernameRef.current && currentUsernameRef.current === e.data) {
-        onYourTurnRef.current?.();
+      setCurrentPlayer(e.data);
+    });
+
+    eventSource.addEventListener('continentConquered', (e: MessageEvent) => {
+      if (isAttackResultProcessingRef.current) {
+        queuedEventsRef.current.push({ type: 'continentConquered', data: e.data });
+        return;
       }
+      try {
+        const data: { player: string; continent: string } = JSON.parse(e.data);
+        setContinentConquered(data);
+        const timeoutId = setTimeout(() => setContinentConquered(null), 5000);
+        timeoutIdsRef.current.push(timeoutId);
+      } catch (err) {
+        console.error('failed parse continentConquered', err);
+      }
+    });
+
+    eventSource.addEventListener('attackResult', (e: MessageEvent) => {
+      try {
+        const data: AttackResult = JSON.parse(e.data);
+        setAttackResult(data);
+
+        isAttackResultProcessingRef.current = true;
+
+        const timeoutId = setTimeout(() => {
+          setAttackResult(null);
+          isAttackResultProcessingRef.current = false;
+          flushQueuedEvents();
+        }, 5500);
+        timeoutIdsRef.current.push(timeoutId);
+      } catch (err) {
+        console.error('failed parse attackResult', err);
+      }
+    });
+
+    eventSource.addEventListener('gameEnded', (e: MessageEvent) => {
+      const winner = e.data.replace(/^Player /, '').replace(/ has won the game!$/, '');
+      setGameEnded(winner);
     });
 
     eventSource.onerror = (err) => {
@@ -102,6 +185,10 @@ export function useGameStream(
     return () => {
       eventSource.close();
       eventSourceRef.current = null;
+      timeoutIdsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutIdsRef.current = [];
+      queuedEventsRef.current = [];
+      isAttackResultProcessingRef.current = false;
     };
   }, [roomId]);
 
@@ -111,6 +198,12 @@ export function useGameStream(
     gameStarted,
     gameStateJson,
     pendingDistCount,
+    currentPlayer,
+    continentConquered,
+    attackResult,
+    gameEnded,
+    setContinentConquered,
+    setAttackResult,
     setPendingDistCount,
     setGameStarted,
   } as EventsourceTypes;
