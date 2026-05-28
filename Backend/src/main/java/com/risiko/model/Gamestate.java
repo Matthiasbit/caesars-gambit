@@ -193,6 +193,9 @@ public class Gamestate {
     }
 
     public static List<Integer> dice(int rollCount) {
+        if (rollCount <= 0) {
+            return Collections.emptyList();
+        }
         List<Integer> rolls = new ArrayList<>(rollCount);
         for (int i = 0; i < rollCount; i++) {
             rolls.add(java.util.concurrent.ThreadLocalRandom.current().nextInt(1, 7));
