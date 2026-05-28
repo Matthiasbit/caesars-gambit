@@ -19,9 +19,10 @@ export interface GameCardProps {
     gameStateJson?: string | null
     selectedRegionId?: string | null
     hoveredRegionId?: string | null
+    justConqueredTerritory?: string | null
 }
 
-export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
@@ -143,7 +144,29 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
             region.style.filter = 'none'
             region.style.transition = 'all 0.2s ease'
 
-            if (territory?.owner && territoryColor && territory.territory === selectedRegionId) {
+            // Show all territories with 35% opacity
+            if (territory?.owner && territoryColor) {
+                region.setAttribute('fill', territoryColor)
+                region.setAttribute('fill-opacity', '0.35')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.7)')
+                region.setAttribute('stroke-width', '1')
+                region.style.fill = territoryColor
+                region.style.fillOpacity = '0.35'
+                region.style.stroke = 'rgba(255,255,255,0.7)'
+                region.style.strokeWidth = '1'
+            }
+
+            // Apply conquest animation if this territory was just conquered
+            if (region.id === justConqueredTerritory) {
+                region.classList.add('territory-conquered')
+                // Remove animation class after animation completes so it can be replayed
+                setTimeout(() => {
+                    region.classList.remove('territory-conquered')
+                }, 1500)
+            }
+
+            // Highlight selected territory
+            if (territory?.territory === selectedRegionId && territoryColor) {
                 region.setAttribute('fill', territoryColor)
                 region.setAttribute('fill-opacity', '0.55')
                 region.setAttribute('stroke', 'rgba(255,255,255,0.95)')
@@ -155,17 +178,17 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 region.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.45))'
             } else if (territory?.owner && territoryColor && territory.territory === hoveredRegionId) {
                 region.setAttribute('fill', territoryColor)
-                region.setAttribute('fill-opacity', '0.35')
-                region.setAttribute('stroke', 'rgba(255,255,255,0.9)')
-                region.setAttribute('stroke-width', '2')
+                region.setAttribute('fill-opacity', '0.75')
+                region.setAttribute('stroke', 'rgba(255,255,255,0.98)')
+                region.setAttribute('stroke-width', '3')
                 region.style.fill = territoryColor
-                region.style.fillOpacity = '0.35'
-                region.style.stroke = 'rgba(255,255,255,0.9)'
-                region.style.strokeWidth = '2'
-                region.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.35))'
+                region.style.fillOpacity = '0.75'
+                region.style.stroke = 'rgba(255,255,255,0.98)'
+                region.style.strokeWidth = '3'
+                region.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.6))'
             }
         })
-    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, svgLoaded])
+    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, svgLoaded])
 
     return (
         <>

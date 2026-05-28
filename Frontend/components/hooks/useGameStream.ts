@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 
 type ChatMessage = { username: string; message: string };
 
+export type AttackResult = {
+  attackerDice: number[];
+  defenderDice: number[];
+  lostTroopsAttack: number;
+  lostTroopsDefense: number;
+  territoryFrom: string;
+  territoryTo: string;
+  territoryWon: boolean;
+};
+
 export type EventsourceTypes = {
   playerNames: string[];
   chatMessages: ChatMessage[];
@@ -10,7 +20,9 @@ export type EventsourceTypes = {
   pendingDistCount: number | null;
   currentPlayer: string | null;
   continentConquered: { player: string; continent: string } | null;
+  attackResult: AttackResult | null;
   setContinentConquered: (data: { player: string; continent: string } | null) => void;
+  setAttackResult: (data: AttackResult | null) => void;
   setPendingDistCount: (count: number | null) => void;
   setGameStarted: (started: boolean) => void;
 
@@ -27,6 +39,7 @@ export function useGameStream(
   const [pendingDistCount, setPendingDistCount] = useState<number | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
   const [continentConquered, setContinentConquered] = useState<{ player: string; continent: string } | null>(null);
+  const [attackResult, setAttackResult] = useState<AttackResult | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const onGameStartedRef = useRef<() => void | undefined>(onGameStarted);
  
@@ -93,6 +106,16 @@ export function useGameStream(
       }
     });
 
+    eventSource.addEventListener('attackResult', (e: MessageEvent) => {
+      try {
+        const data: AttackResult = JSON.parse(e.data);
+        setAttackResult(data);
+        setTimeout(() => setAttackResult(null), 6000);
+      } catch (err) {
+        console.error('failed parse attackResult', err);
+      }
+    });
+
     eventSource.onerror = (err) => {
       console.error('SSE error', err);
       eventSource.close();
@@ -114,7 +137,9 @@ export function useGameStream(
     pendingDistCount,
     currentPlayer,
     continentConquered,
+    attackResult,
     setContinentConquered,
+    setAttackResult,
     setPendingDistCount,
     setGameStarted,
   } as EventsourceTypes;

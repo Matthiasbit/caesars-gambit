@@ -1,6 +1,6 @@
 import GameCard from './GameCard'
 import { Chat } from '../ui/chat'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DistributionDialog } from './DistributionDialog'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
 import { distTroops } from '../api/distTroops'
@@ -25,6 +25,7 @@ type TerritoryData = {
 export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [regionClicked, setRegionClicked] = useState<string | null>(null)
     const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null)
+    const [justConqueredTerritory, setJustConqueredTerritory] = useState<string | null>(null)
     const [dialogTerritory, setDialogTerritory] = useState<string | null>(null);
     const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [moveDialog, setMoveDialog] = useState(false)
@@ -35,6 +36,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const ownerColorMap = useOwnerColorMap(territories)
     const currentUser = useGetCurrentUser()
     const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+    const lastConqueredRef = useRef<string | null>(null)
 
     useEffect(() => {
         if (currentUser.isSuccess && currentUser.data) {
@@ -42,6 +44,16 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
             setCurrentUsername(currentUser.data.username);
         }
     }, [currentUser]);
+
+    useEffect(() => {
+        if (eventsource.attackResult?.territoryWon && eventsource.attackResult.territoryTo !== lastConqueredRef.current) {
+            lastConqueredRef.current = eventsource.attackResult.territoryTo
+            Promise.resolve().then(() => {
+                setJustConqueredTerritory(eventsource.attackResult?.territoryTo || null)
+                setTimeout(() => setJustConqueredTerritory(null), 1500)
+            })
+        }
+    }, [eventsource.attackResult]);
 
     useEffect(() => {
         if (!eventsource.gameStateJson) return
@@ -111,7 +123,6 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         await attack({ sum: num, from: moveFrom!, to: moveTo!, roomId });
 
     }
-
 
     function handleRegionHover(regionId: string | null) {
         if (!regionClicked) {
@@ -254,6 +265,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 gameStateJson={eventsource.gameStateJson}
                                 selectedRegionId={regionClicked}
                                 hoveredRegionId={hoveredRegionId}
+                                justConqueredTerritory={justConqueredTerritory}
                             />
                             <button 
                                 onClick={() => handleEndTurn()}

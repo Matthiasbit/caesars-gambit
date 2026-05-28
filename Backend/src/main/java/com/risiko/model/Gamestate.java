@@ -123,13 +123,20 @@ public class Gamestate {
         if (currentPlayer.getTerritories().get(fromTerritory) <= sum) {
             throw new IllegalArgumentException("Nicht genug Truppen für diesen Angriff.");
         }
+
+        List<Integer> attackerRolls = null;
+        List<Integer> defenderRolls = null;
+        int lostTroopsAttack = 0;
+        int lostTroopsDefence = 0;
+        boolean territoryWon = false;
+
         for (Player p : players) {
             if (p.hasTerritory(toTerritory)) {
-                List<Integer> attackerRolls = dice(Math.min(sum, 3), Math.min(p.getTerritories().get(toTerritory), 2));
-                List<Integer> defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory),2), Math.min(p.getTerritories().get(toTerritory), 2));
+                attackerRolls = dice(Math.min(sum, 3), Math.min(p.getTerritories().get(toTerritory), 2));
+                defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory), 2), Math.min(p.getTerritories().get(toTerritory), 2));
                 int comparisons = Math.min(attackerRolls.size(), defenderRolls.size());
-                int lostTroopsDefence = 0;
-                int lostTroopsAttack = 0;
+                lostTroopsDefence = 0;
+                lostTroopsAttack = 0;
                 for (int i = 0; i < comparisons; i++) {
                     if (attackerRolls.get(i) > defenderRolls.get(i)) {
                         lostTroopsDefence++;
@@ -138,6 +145,7 @@ public class Gamestate {
                     }
                 }
                 if (p.defend(toTerritory, lostTroopsDefence) == 0) {
+                    territoryWon = true;
                     currentPlayer.getTerritory(toTerritory);
                     currentPlayer.getTerritories().put(fromTerritory, currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
                     currentPlayer.moveTroops(fromTerritory, toTerritory, 1);
@@ -158,6 +166,7 @@ public class Gamestate {
                         }
                     }
                 } else {
+                    territoryWon = false;
                     p.getTerritories().put(toTerritory, p.getTerritories().get(toTerritory) - lostTroopsDefence);
                     currentPlayer.getTerritories().put(fromTerritory,
                             currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
@@ -165,16 +174,24 @@ public class Gamestate {
             }
         }
 
+        com.risiko.model.dto.AttackResultDto resultDto = new com.risiko.model.dto.AttackResultDto(
+                attackerRolls,
+                defenderRolls,
+                lostTroopsAttack,
+                lostTroopsDefence,
+                fromTerritory.getDisplayName(),
+                toTerritory.getDisplayName(),
+                territoryWon
+        );
+
         gameController.broadcastEvent(
                 players.stream()
                         .map(pl -> pl.emitter)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList()),
                 "attackResult",
-                "Attack from " + fromTerritory + " to " + toTerritory + " completed."); // TODO: lost troops hier noch
-                                                                                        // einfügen für ui ux nur
-                                                                                        // relevant wenn gebiet nicht
-                                                                                        // gewonnen wurde
+                resultDto);
+
         checkIfGameEnded();
     }
 
