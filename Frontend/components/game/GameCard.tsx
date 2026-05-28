@@ -3,6 +3,7 @@ import Image from 'next/image'
 import styles from './GameCard.module.css'
 import { TerritoryLabels } from './TerritoryLabels'
 import { getColorForOwner, useOwnerColorMap } from '@/lib/useOwnerColorMap'
+import { getContinentForTerritory } from '@/lib/continents'
 
 const KARTE_SVG_PATH = '/assets/Karte-neutral.svg'
 const KARTE_FABIG_PATH = '/assets/Karte-fabig.jpg'
@@ -20,9 +21,10 @@ export interface GameCardProps {
     selectedRegionId?: string | null
     hoveredRegionId?: string | null
     justConqueredTerritory?: string | null
+    continentConquered?: { player: string; continent: string } | null
 }
 
-export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, continentConquered }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
@@ -129,6 +131,23 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
 
         const regions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
 
+        // Build continent → owner map
+        const continentOwnerMap = new Map<string, string | null>()
+        const continentGroups = new Map<string, TerritoryData[]>()
+        territories.forEach(t => {
+            const cont = getContinentForTerritory(t.territory)
+            if (cont) {
+                const group = continentGroups.get(cont) ?? []
+                group.push(t)
+                continentGroups.set(cont, group)
+            }
+        })
+        continentGroups.forEach((terrs, cont) => {
+            const firstOwner = terrs[0]?.owner
+            const controlled = !!firstOwner && terrs.every(t => t.owner === firstOwner)
+            continentOwnerMap.set(cont, controlled ? firstOwner : null)
+        })
+
         regions.forEach((region) => {
             const territory = territories.find((entry) => entry.territory === region.id)
             const territoryColor = territory ? getColorForOwner(territory.owner, ownerColorMap) : null
@@ -156,7 +175,25 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 region.style.strokeWidth = '1'
             }
 
-            // Apply conquest animation if this territory was just conquered
+            // Continent border: thick colored stroke if continent is fully controlled
+            if (territory) {
+                const cont = getContinentForTerritory(territory.territory)
+                if (cont) {
+                    const continentOwner = continentOwnerMap.get(cont)
+                    if (continentOwner) {
+                        const continentColor = getColorForOwner(continentOwner, ownerColorMap)
+                        if (continentColor) {
+                            region.setAttribute('stroke', continentColor)
+                            region.setAttribute('stroke-width', '3')
+                            region.style.stroke = continentColor
+                            region.style.strokeWidth = '3'
+                            if (!region.classList.contains('continent-conquered')) {
+                                region.style.filter = `drop-shadow(0 0 4px ${continentColor})`
+                            }
+                        }
+                    }
+                }
+            }
             if (region.id === justConqueredTerritory) {
                 region.classList.add('territory-conquered')
                 // Remove animation class after animation completes so it can be replayed
@@ -189,6 +226,32 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
             }
         })
     }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, svgLoaded])
+
+    // Continent conquest pulse animation
+    useEffect(() => {
+        if (!continentConquered || !svgLoaded) return
+        const container = svgContainerRef.current
+        if (!container) return
+        const svg = container.querySelector('svg')
+        if (!svg) return
+
+        const affectedRegions = svg.querySelectorAll<SVGGraphicsElement>('path[id]')
+        const conquered = continentConquered.continent
+        const toAnimate: SVGGraphicsElement[] = []
+        affectedRegions.forEach(region => {
+            const territory = territories.find(t => t.territory === region.id)
+            if (territory && getContinentForTerritory(territory.territory) === conquered) {
+                toAnimate.push(region)
+            }
+        })
+        toAnimate.forEach(region => {
+            region.classList.remove('continent-conquered')
+            // Force reflow so animation restarts
+            void (region as unknown as { offsetWidth: number }).offsetWidth
+            region.classList.add('continent-conquered')
+            setTimeout(() => region.classList.remove('continent-conquered'), 2500)
+        })
+    }, [continentConquered, svgLoaded, territories])
 
     return (
         <>

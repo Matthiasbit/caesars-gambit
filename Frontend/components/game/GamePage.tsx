@@ -266,6 +266,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 selectedRegionId={regionClicked}
                                 hoveredRegionId={hoveredRegionId}
                                 justConqueredTerritory={justConqueredTerritory}
+                                continentConquered={eventsource.continentConquered}
                             />
                             <button 
                                 onClick={() => handleEndTurn()}
