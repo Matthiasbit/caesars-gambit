@@ -63,6 +63,7 @@ public class AuthService {
         return userRepository.save(user);
     }
       
+    @Transactional
     public User getUserFromAuth() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
