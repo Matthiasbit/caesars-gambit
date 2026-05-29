@@ -1,13 +1,4 @@
 import { EventsourceTypes } from '../hooks/useGameStream'
-import {
-  Timeline,
-  TimelineItem,
-  TimelineDot,
-  TimelineConnector,
-  TimelineContent,
-  TimelineHeader,
-  TimelineTitle,
-} from '@/components/ui/timeline'
 
 interface GamePhaseTimelineProps {
   eventsource: EventsourceTypes
@@ -20,21 +11,16 @@ export function GamePhaseTimeline({
   currentUsername,
   moveExecuted,
 }: GamePhaseTimelineProps) {
-  // Determine active index based on game state
   let activeIndex = 0
 
   if (eventsource.pendingDistCount != null) {
-    // Distribution phase is active
     activeIndex = 0
   } else if (!moveExecuted) {
-    // Attack phase is active (can still attack)
     activeIndex = 1
   } else {
-    // Move phase is active (already attacked or moving)
     activeIndex = 2
   }
 
-  // Only show timeline for the current player
   if (eventsource.currentPlayer !== currentUsername) {
     return null
   }
@@ -44,21 +30,6 @@ export function GamePhaseTimeline({
     'Angriff',
     'Verschieben'
   ]
-
-  const getItemStyle = (itemIndex: number) => {
-    const isCompleted = itemIndex < activeIndex
-    const isActive = itemIndex === activeIndex
-    const isPending = itemIndex > activeIndex
-
-    return {
-      '--timeline-dot-size': '1.5rem',
-      '--timeline-connector-thickness': '0.25rem',
-    } as React.CSSProperties & {
-      '--timeline-dot-bg'?: string
-      '--timeline-dot-border'?: string
-      '--timeline-connector-bg'?: string
-    }
-  }
 
   return (
     <div className="w-full px-4 py-3 rounded-lg border border-[rgba(59,130,246,0.25)] bg-[rgba(59,130,246,0.08)]">
@@ -72,7 +43,6 @@ export function GamePhaseTimeline({
         {phases.map((phase, index) => {
           const isCompleted = index < activeIndex
           const isActive = index === activeIndex
-          const isPending = index > activeIndex
           const isLast = index === phases.length - 1
 
           return (
@@ -99,7 +69,7 @@ export function GamePhaseTimeline({
                     <span style={{ color: '#000000', fontSize: '0.75rem' }}>●</span>
                   )}
                 </div>
-                
+
                 {/* Phase Label */}
                 <div
                   className="text-center mt-2 text-xs font-medium"

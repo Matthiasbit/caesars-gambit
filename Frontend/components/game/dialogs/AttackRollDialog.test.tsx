@@ -3,16 +3,18 @@ import { render, screen } from '@testing-library/react'
 import type { Ref } from 'react'
 import type { ReactDiceRef } from 'react-dice-complete'
 import { AttackRollDialog } from './AttackRollDialog'
+import React from 'react'
 
 vi.mock('react-dice-complete', () => {
-    const React = require('react')
 
     return {
         __esModule: true,
+        // eslint-disable-next-line react/display-name
         default: React.forwardRef((props: { faceColor?: string }, ref: React.Ref<ReactDiceRef>) => {
             React.useImperativeHandle(ref, () => ({
                 rollAll: vi.fn(),
             }))
+        
 
             return <div data-testid="dice" data-facecolor={props.faceColor} />
         }),
