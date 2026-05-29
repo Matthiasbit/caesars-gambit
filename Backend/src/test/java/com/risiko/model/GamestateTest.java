@@ -112,6 +112,7 @@ class GamestateTest {
             Player p2 = makePlayer(2L);
             java.util.List<Player> players = new java.util.ArrayList<>(List.of(p1, p2));
             Gamestate gamestate = new Gamestate(null, players, gameController);
+            gamestate.start();
             org.springframework.test.util.ReflectionTestUtils.setField(gamestate, "currentPlayer", p1);
 
             gamestate.endMove();
@@ -125,6 +126,7 @@ class GamestateTest {
             Player p2 = makePlayer(2L);
             java.util.List<Player> players = new java.util.ArrayList<>(List.of(p1, p2));
             Gamestate gamestate = new Gamestate(null, players, gameController);
+            gamestate.start();
             org.springframework.test.util.ReflectionTestUtils.setField(gamestate, "currentPlayer", p2);
 
             gamestate.endMove();

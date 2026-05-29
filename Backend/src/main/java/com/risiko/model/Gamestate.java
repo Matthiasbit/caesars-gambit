@@ -87,6 +87,10 @@ public class Gamestate {
     public void endMove() {
         int currentIndex = players.indexOf(currentPlayer);
         int nextIndex = (currentIndex + 1) % players.size();
+        checkIfGameEnded();
+        while (players.get(nextIndex).getTerritories().size() == 0) {
+            nextIndex = (nextIndex + 1) % players.size();
+        }
         currentPlayer = players.get(nextIndex);
         nextMove();
     }
