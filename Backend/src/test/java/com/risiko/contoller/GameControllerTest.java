@@ -8,8 +8,11 @@ import com.risiko.model.Room;
 import com.risiko.model.Territorries;
 import com.risiko.model.User;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.risiko.services.AuthService;
 import com.risiko.services.RoomService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +28,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -310,6 +314,62 @@ class GameControllerTest {
 
             mockMvc.perform(get("/api/game/stream/99"))
                     .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void spielerNichtImRaum_wirft404() throws Exception {
+            when(roomService.getRoomById(1)).thenReturn(room);
+            when(room.getPlayers()).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/game/stream/1"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void erfolgreich_spielNichtGestartet_erstelltEmitter() {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            when(room.isGameStarted()).thenReturn(false);
+
+            SseEmitter emitter = gameController.stream("1", null, null);
+
+            assertThat(emitter).isNotNull();
+        }
+
+        @Test
+        void erfolgreich_spielGestartet_sendetGameState() {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            when(room.isGameStarted()).thenReturn(true);
+            when(player.getUsername()).thenReturn("TestUser");
+
+            gameController.stream("1", null, null);
+
+            verify(gamestate).sendGameStateUpdate();
+            verify(player).askDistTroops();
+        }
+    }
+
+    @Nested
+    class BroadcastEvent {
+
+        @Test
+        void mitEmitter_sendetEreignis() throws IOException {
+            SseEmitter emitter = mock(SseEmitter.class);
+
+            gameController.broadcastEvent(List.of(emitter), "test", "data");
+
+            verify(emitter).send(any(Set.class));
+        }
+
+        @Test
+        void ioException_ruftCompleteWithErrorAuf() throws IOException {
+            SseEmitter emitter = mock(SseEmitter.class);
+            doThrow(new IOException("io error")).when(emitter).send(any(Set.class));
+
+            gameController.broadcastEvent(List.of(emitter), "test", "data");
+
+            verify(emitter).completeWithError(any(IOException.class));
         }
     }
 
