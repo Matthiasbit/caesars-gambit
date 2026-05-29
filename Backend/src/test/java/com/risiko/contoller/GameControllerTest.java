@@ -312,4 +312,50 @@ class GameControllerTest {
                     .andExpect(status().isNotFound());
         }
     }
+
+    @Nested
+    class EndTurn {
+
+        @Test
+        void gueltigeAnfrage_beendetZug() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+
+            mockMvc.perform(post("/api/game/endTurn")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", "1"))))
+                    .andExpect(status().isOk());
+
+            verify(gamestate).endMove();
+            verify(gamestate).sendGameStateUpdate();
+        }
+
+        @Test
+        void nichtAktuellerSpieler_wirft409() throws Exception {
+            setupAuthenticatedCurrentPlayer();
+            when(roomService.getRoomById(1)).thenReturn(room);
+            Player otherPlayer = mock(Player.class);
+            when(room.getPlayers()).thenReturn(List.of(otherPlayer));
+            when(otherPlayer.getUserId()).thenReturn(1L);
+            when(gamestate.getCurrentPlayer()).thenReturn(player);
+
+            mockMvc.perform(post("/api/game/endTurn")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", "1"))))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        void raumNichtGefunden_wirft404() throws Exception {
+            when(roomService.getRoomById(99)).thenThrow(new AppException(HttpStatus.NOT_FOUND, "Room not found"));
+
+            mockMvc.perform(post("/api/game/endTurn")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                            Map.of("roomId", "99"))))
+                    .andExpect(status().isNotFound());
+        }
+    }
 }

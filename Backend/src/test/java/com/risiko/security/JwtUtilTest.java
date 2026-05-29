@@ -73,5 +73,11 @@ class JwtUtilTest {
 
             assertThat(jwtUtil.getUserIdFromToken(token)).isEqualTo(42L);
         }
+
+        @Test
+        void gibtNullZurueckWennClaimFehlt() {
+            String token = jwtUtil.generateToken("user@example.com", 1L);
+            assertThat(jwtUtil.getUserIdFromToken(token)).isNotNull();
+        }
     }
 }
