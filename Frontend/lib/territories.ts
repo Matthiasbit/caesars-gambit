@@ -11,7 +11,7 @@ export const TERRITORY_NEIGHBORS: Record<string, readonly string[]> = {
     'Apilion': ['Felsdüne', 'Hari', 'Mendria', 'Palerno', 'Tuku'],
     'Appullen': ['Eraldis', 'Lisitone', 'Mendria', 'Pergugia', 'Eichenwald'],
     'Aquitane': ['Augusta Nemeters', 'Maureniet'],
-    'Augusta Nemeters': ['Agualaine', 'Aquitane', 'Farnovia', 'Forouza', 'Maureniet'],
+    'Augusta Nemeters': ['Agualaine', 'Aquitane', 'Farnovia', 'Forouza', 'Maureniet', 'Tuskulum'],
     'Campania a Lappe': ['Eichenwald', 'Forum Trastevevee', 'Forum Vatlkanstadt'],
     'Dünensee': ['Jonische-Ufer', 'Neapel', 'Ponralma', 'Reniakuste', 'Sizi Küste'],
     'Eichenwald': ['Appullen', 'Campania a Lappe', 'Neapel', 'Ponralma'],
