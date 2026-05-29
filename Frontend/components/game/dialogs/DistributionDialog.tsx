@@ -26,6 +26,7 @@ export const DistributionDialog: React.FC<DistributionDialogProps> = ({
 
     const handleConfirm = () => {
         if (count > 0 && count <= availableTroops) {
+            setCount(1)
             onConfirm(count)
         }
     }

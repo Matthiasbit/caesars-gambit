@@ -31,15 +31,18 @@ public class Room {
 
     public void joinRoom(long userId, boolean host) {
         if (gameStarted) {
-            // do some error handling and unexpected error handling
+            throw new AppException(HttpStatus.CONFLICT, "Cannot join a game that has already started");
+        }
+        if (players.stream().anyMatch(p -> p.getUserId() == userId)) {
+            throw new AppException(HttpStatus.CONFLICT, "User already in room");
         }
         Player player = new Player(userId, userRepository, gameController);
         players.add(player);
         player.setHost(host);
         List<SseEmitter> emitters = players.stream()
-            .map(p -> p.emitter)
-            .filter(e -> e != null)
-            .collect(Collectors.toList());
+                .map(p -> p.emitter)
+                .filter(e -> e != null)
+                .collect(Collectors.toList());
         gameController.broadcastEvent(emitters, "playerJoined", getLobbyData());
     }
 
@@ -48,19 +51,19 @@ public class Room {
             // do some error handling and unexpected error handling
         }
         players = players.stream()
-            .filter(p -> p.getUserId() != userId)
-            .collect(Collectors.toList());
+                .filter(p -> p.getUserId() != userId)
+                .collect(Collectors.toList());
         List<SseEmitter> emitters = players.stream()
-            .map(p -> p.emitter)
-            .filter(e -> e != null)
-            .collect(Collectors.toList());
+                .map(p -> p.emitter)
+                .filter(e -> e != null)
+                .collect(Collectors.toList());
         gameController.broadcastEvent(emitters, "playerLeft", getLobbyData());
     }
 
     public List<LobbyPlayerDto> getLobbyData() {
         return players.stream()
-            .map(p -> new LobbyPlayerDto(p.username, p.isHost()))
-            .collect(Collectors.toList());
+                .map(p -> new LobbyPlayerDto(p.username, p.isHost()))
+                .collect(Collectors.toList());
     }
 
     public void startGame() {
@@ -95,17 +98,17 @@ public class Room {
 
     public void sendMessage(long userId, String message) {
         Player sender = players.stream()
-            .filter(p -> p.getUserId() == userId)
-            .findFirst()
-            .orElse(null);
+                .filter(p -> p.getUserId() == userId)
+                .findFirst()
+                .orElse(null);
         if (sender == null) {
             throw new IllegalArgumentException("User not in room");
         }
         ChatMessageDto formattedMessage = new ChatMessageDto(sender.username, message);
         List<SseEmitter> emitters = players.stream()
-            .map(p -> p.emitter)
-            .filter(e -> e != null)
-            .collect(Collectors.toList());
+                .map(p -> p.emitter)
+                .filter(e -> e != null)
+                .collect(Collectors.toList());
         gameController.broadcastEvent(emitters, "chatMessage", formattedMessage);
     }
 

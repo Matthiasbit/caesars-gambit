@@ -23,15 +23,16 @@ export interface GameCardProps {
     justConqueredTerritory?: string | null
     onTerritoryAnimationEnd?: (territoryId: string) => void
     continentConquered?: { player: string; continent: string } | null
+    playerNames?: string[]
 }
 
-export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, continentConquered }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, continentConquered, playerNames = [] }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
     const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [svgLoaded, setSvgLoaded] = useState(false)
-    const ownerColorMap = useOwnerColorMap(territories)
+    const ownerColorMap = useOwnerColorMap(playerNames)
 
     useEffect(() => {
         if (!gameStateJson) {
@@ -283,6 +284,7 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                     gameStateJson={gameStateJson || null}
                     onTerritoryButtonClick={onRegionClick}
                     onTerritoryHover={onRegionHover}
+                    playerNames={playerNames}
                 />
             </div>
         </>

@@ -85,6 +85,7 @@ public class Gamestate {
     }
 
     public void endMove() {
+        currentPlayer.setMoved(false);
         int currentIndex = players.indexOf(currentPlayer);
         int nextIndex = (currentIndex + 1) % players.size();
         checkIfGameEnded();
@@ -127,6 +128,10 @@ public class Gamestate {
             throw new IllegalArgumentException("Nicht genug Truppen für diesen Angriff.");
         }
 
+        if(currentPlayer.isMoved()) {
+            throw new IllegalArgumentException("Nachdem Truppen verschoben wurden, ist kein Angriff mehr möglich.");
+         }
+
         List<Integer> attackerRolls = null;
         List<Integer> defenderRolls = null;
         int lostTroopsAttack = 0;
@@ -139,11 +144,19 @@ public class Gamestate {
                 defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory), 2));
                 lostTroopsDefence = 0;
                 lostTroopsAttack = 0;
-                for (int i = 0; i < Math.min(Math.min(p.getTerritories().get(toTerritory), 2), sum - 1); i++) {
-                    if (attackerRolls.get(i) > defenderRolls.get(i)) {
-                        lostTroopsDefence++;
+                if (sum == 1) {
+                    if (attackerRolls.get(0) > defenderRolls.get(0)) {
+                        lostTroopsDefence = 1;
                     } else {
-                        lostTroopsAttack++;
+                        lostTroopsAttack = 1;
+                    }
+                } else {
+                    for (int i = 0; i < Math.min(Math.min(p.getTerritories().get(toTerritory), 2), sum - 1); i++) {
+                        if (attackerRolls.get(i) > defenderRolls.get(i)) {
+                            lostTroopsDefence++;
+                        } else {
+                            lostTroopsAttack++;
+                        }
                     }
                 }
                 if (p.defend(toTerritory, lostTroopsDefence) == 0) {
@@ -151,8 +164,7 @@ public class Gamestate {
                     currentPlayer.getTerritory(toTerritory);
                     currentPlayer.getTerritories().put(fromTerritory,
                             currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
-                    currentPlayer.moveTroops(fromTerritory, toTerritory, 1);
-
+                    currentPlayer.moveTroops(fromTerritory, toTerritory, sum - lostTroopsAttack);
                 } else {
                     territoryWon = false;
                     p.getTerritories().put(toTerritory, p.getTerritories().get(toTerritory) - lostTroopsDefence);
@@ -181,7 +193,7 @@ public class Gamestate {
                 "attackResult",
                 resultDto);
 
-                Thread.sleep(100);
+        Thread.sleep(100);
 
         for (Continent continent : Continent.values()) {
             if (continent.getTerritories().contains(toTerritory)
