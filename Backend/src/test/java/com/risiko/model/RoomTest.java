@@ -192,13 +192,12 @@ class RoomTest {
     class JoinRoom {
 
         @Test
-        void wennSpielGestartet_trittTrotzdemBei() {
-            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        void wennSpielGestartet_wirftException() {
             ReflectionTestUtils.setField(room, "gameStarted", true);
 
-            room.joinRoom(1L, false);
-
-            assertThat(room.getPlayers()).hasSize(1);
+            assertThatThrownBy(() -> room.joinRoom(1L, false))
+                    .isInstanceOf(AppException.class)
+                    .hasMessageContaining("Cannot join a game that has already started");
         }
     }
 
