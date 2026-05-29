@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 
-
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
@@ -33,16 +32,21 @@ public class GameController {
     }
 
     @GetMapping("/stream/{roomId}")
-    public SseEmitter stream(@PathVariable("roomId") String roomId, @RequestParam(value = "token", required = false) String tokenParam, HttpServletRequest request) {
-              
+    public SseEmitter stream(@PathVariable("roomId") String roomId,
+            @RequestParam(value = "token", required = false) String tokenParam, HttpServletRequest request) {
+
         Room room = roomService.getRoomById(Integer.parseInt(roomId));
 
         SseEmitter emitter = new SseEmitter(0L);
-        
+
         Player player = room.getPlayers().stream()
-            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
-            .findFirst()
-            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
+                .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+                .findFirst()
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
+
+        if (player.emitter != null) {
+            player.emitter.complete();
+        }
 
         player.setEmitter(emitter);
         emitter.onCompletion(() -> player.setEmitter(null));
@@ -51,10 +55,11 @@ public class GameController {
 
         try {
             emitter.send(SseEmitter.event().name("init").data(room.getLobbyData()).build());
-            if(room.isGameStarted()) {
+            if (room.isGameStarted()) {
                 room.getGamestate().sendGameStateUpdate();
                 player.askDistTroops();
-                broadcastEvent(Collections.singletonList(emitter), "currentPlayer", room.getGamestate().getCurrentPlayer().getUsername());
+                broadcastEvent(Collections.singletonList(emitter), "currentPlayer",
+                        room.getGamestate().getCurrentPlayer().getUsername());
             }
         } catch (IOException e) {
             emitter.completeWithError(e);
@@ -67,9 +72,9 @@ public class GameController {
     public void move(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
         Player player = room.getPlayers().stream()
-            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
-            .findFirst()
-            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
+                .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+                .findFirst()
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
             throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
@@ -79,18 +84,19 @@ public class GameController {
         player.moveTroops(from, to, sum);
         room.getGamestate().sendGameStateUpdate();
     }
-                    
+
     @PostMapping("/attack")
     public void attack(@RequestBody Map<String, Object> request) throws InterruptedException {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
         Player player = room.getPlayers().stream()
-            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
-            .findFirst()
-            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
+                .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+                .findFirst()
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
             throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
-        room.getGamestate().attack(Territorries.getTerritorryByDisplayName((String) request.get("from")), Territorries.getTerritorryByDisplayName((String) request.get("to")), (Integer) request.get("sum"));
+        room.getGamestate().attack(Territorries.getTerritorryByDisplayName((String) request.get("from")),
+                Territorries.getTerritorryByDisplayName((String) request.get("to")), (Integer) request.get("sum"));
         room.getGamestate().sendGameStateUpdate();
     }
 
@@ -99,7 +105,8 @@ public class GameController {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
         String to = (String) request.get("to");
         int sum = ((Number) request.get("sum")).intValue();
-        room.getGamestate().getPlayerByUserId(authService.getUserFromAuth().getId()).distTroops(Territorries.getTerritorryByDisplayName(to), sum);
+        room.getGamestate().getPlayerByUserId(authService.getUserFromAuth().getId())
+                .distTroops(Territorries.getTerritorryByDisplayName(to), sum);
         room.getGamestate().sendGameStateUpdate();
     }
 
@@ -107,9 +114,9 @@ public class GameController {
     public void endTurn(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
         Player player = room.getPlayers().stream()
-            .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
-            .findFirst()
-            .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
+                .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
+                .findFirst()
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
             throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }

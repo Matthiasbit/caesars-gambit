@@ -144,7 +144,7 @@ public class Gamestate {
                 defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory), 2));
                 lostTroopsDefence = 0;
                 lostTroopsAttack = 0;
-                if (sum == 1) {
+                if (sum == 1 || p.getTerritories().get(toTerritory) == 1) {
                     if (attackerRolls.get(0) > defenderRolls.get(0)) {
                         lostTroopsDefence = 1;
                     } else {
