@@ -165,6 +165,7 @@ public class Gamestate {
                     currentPlayer.getTerritories().put(fromTerritory,
                             currentPlayer.getTerritories().get(fromTerritory) - lostTroopsAttack);
                     currentPlayer.moveTroops(fromTerritory, toTerritory, sum - lostTroopsAttack);
+                    currentPlayer.setMoved(false);
                 } else {
                     territoryWon = false;
                     p.getTerritories().put(toTerritory, p.getTerritories().get(toTerritory) - lostTroopsDefence);
