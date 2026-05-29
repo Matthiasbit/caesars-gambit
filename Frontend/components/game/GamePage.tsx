@@ -1,7 +1,7 @@
 import GameCard from './GameCard'
 import { Chat } from '../ui/chat'
 import { useEffect, useRef, useState } from 'react'
-import { DistributionDialog } from './DistributionDialog'
+import { DistributionDialog } from './dialogs/DistributionDialog'
 import { GameEndedDialog } from './dialogs/GameEndedDialog'
 import { ContinentConqueredDialog } from './dialogs/ContinentConqueredDialog'
 import { GameErrorDialog } from './dialogs/GameErrorDialog'
@@ -15,6 +15,7 @@ import { endTurn } from '../api/endTurn'
 import type { ReactDiceRef } from 'react-dice-complete'
 import { AttackResult, EventsourceTypes } from '../hooks/useGameStream'
 import { findWayIfPossible, isAdjacent } from '@/lib/territories'
+import { GamePhaseTimeline } from './GamePhaseTimeline'
 
 type GamePageProps = {
     roomId: string
@@ -39,12 +40,13 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [moveTo, setMoveTo] = useState<string | null>(null)
     const [attackDialog, setAttackDialog] = useState(false)
     const [gameError, setGameError] = useState<string | null>(null)
-    const ownerColorMap = useOwnerColorMap(territories)
+    const ownerColorMap = useOwnerColorMap(eventsource.playerNames)
     const currentUser = useGetCurrentUser()
     const [currentUsername, setCurrentUsername] = useState<string | null>(null)
     const [attackRollResult, setAttackRollResult] = useState<AttackResult | null>(null)
     const [showAttackDice, setShowAttackDice] = useState(false)
     const [attackRollSequence, setAttackRollSequence] = useState(0)
+    const [moveExecuted, setMoveExecuted] = useState(false)
     const lastConqueredRef = useRef<string | null>(null)
     const attackDiceRefs = useRef<Array<ReactDiceRef | null>>([])
     const attackRollTotalRef = useRef(0)
@@ -175,6 +177,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         
         try {
             await moveTroops({ sum: num, from: moveFrom!, to: moveTo!, roomId });
+            setMoveExecuted(true)
         } catch (err) {
             console.error('Move failed:', err)
             setMoveDialog(true) 
@@ -257,6 +260,11 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                 return
             }
 
+            if(moveExecuted) {
+                showGameError('Du hast bereits Truppen bewegt, du darfst nicht mehr angreifen.')
+                return
+            }
+
             setAttackDialog(true)
             setMoveTroopsCount(territoryTroopCount(regionClicked) - 1)
             setMoveTo(regionId)
@@ -273,6 +281,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         
         try {
             await endTurn(roomId);
+            setMoveExecuted(false)
         } catch (err) {
             console.error('End turn failed:', err)
         }
@@ -322,6 +331,11 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                             )
                             )}
                         </div>
+                        <GamePhaseTimeline 
+                            eventsource={eventsource} 
+                            currentUsername={currentUsername} 
+                            moveExecuted={moveExecuted}
+                        />
                         <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
                             <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Chat</h2>
                             <div className="bg-white border rounded-md p-3 shadow-sm flex-grow flex flex-col overflow-hidden w-full">
@@ -343,6 +357,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                     setJustConqueredTerritory((current) => current === territoryId ? null : current)
                                 }}
                                 continentConquered={eventsource.continentConquered}
+                                playerNames={eventsource.playerNames}
                             />
                             <AttackRollDialog
                                 attackRollResult={attackRollResult}
@@ -350,11 +365,13 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 attackRollSequence={attackRollSequence}
                                 diceRefs={attackDiceRefs}
                                 onDieRoll={handleAttackDieRoll}
+                                territories={territories}
+                                ownerColorMap={ownerColorMap}
                             />
                             <button 
                                 onClick={() => handleEndTurn()}
                                 className="absolute bottom-4 left-4 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
-                                disabled={eventsource.currentPlayer !== currentUsername}
+                                style={{visibility: eventsource.currentPlayer !== currentUsername ? "hidden" : "visible"}}
                             >
                                 Zug beenden
                             </button>

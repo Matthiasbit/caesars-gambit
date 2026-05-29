@@ -11,13 +11,14 @@ interface TerritoryLabelsProps {
     gameStateJson: string | null
     onTerritoryButtonClick?: (territoryId: string) => void
     onTerritoryHover?: (territoryId: string | null) => void
+    playerNames?: string[]
 }
 
 export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
     gameStateJson,
     onTerritoryButtonClick,
     onTerritoryHover,
-    
+    playerNames = [],
 }) => {
     const [territories, setTerritories] = useState<TerritoryData[]>([])
 
@@ -34,7 +35,7 @@ export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
         }
     }, [gameStateJson])
 
-    const ownerColorMap = useOwnerColorMap(territories)
+    const ownerColorMap = useOwnerColorMap(playerNames)
 
     const territoryPositions: Record<string, { x: number; y: number }> = {
         Palatin: { x: 166.3, y: 92.6 },

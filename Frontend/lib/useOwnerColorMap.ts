@@ -13,27 +13,16 @@ const COLOR_PALETTE = [
     '#fabebe',
 ]
 
-interface TerritoryData {
-    territory: string
-    owner: string | null
-    troops: number
-}
-
-export const useOwnerColorMap = (territories: TerritoryData[]) => {
+export const useOwnerColorMap = (playerNames: string[]) => {
     const ownerColorMap = useMemo(() => {
         const map: Record<string, string> = {}
-        let nextIndex = 0
 
-        territories.forEach((t) => {
-            if (!t.owner) return
-            if (!map[t.owner]) {
-                map[t.owner] = COLOR_PALETTE[nextIndex % COLOR_PALETTE.length]
-                nextIndex += 1
-            }
+        playerNames.forEach((playerName, index) => {
+            map[playerName] = COLOR_PALETTE[index % COLOR_PALETTE.length]
         })
 
         return map
-    }, [territories])
+    }, [playerNames])
 
     return ownerColorMap
 }

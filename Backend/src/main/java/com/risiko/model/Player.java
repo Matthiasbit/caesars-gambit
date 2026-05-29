@@ -17,6 +17,7 @@ public class Player {
     private boolean host;
     private int troopstoDist;
     private final GameController gameController;
+    private boolean moved;
 
     public Player(long userId, UserRepository userRepository, GameController gameController) {
         this.userId = userId;
@@ -41,7 +42,7 @@ public class Player {
         if (troopstoDist - sum < 0) {
             throw new IllegalArgumentException("Cannot distribute more troops than available");
         }
-        if (sum < 0 ) {
+        if (sum < 0) {
             throw new IllegalArgumentException("Cannot distribute negative troops");
         }
         troopstoDist -= sum;
@@ -66,6 +67,7 @@ public class Player {
         }
         territories.put(from, territories.get(from) - sum);
         territories.put(to, territories.get(to) + sum);
+        moved = true;
     }
 
     public boolean hasTerritory(Territorries territory) {
@@ -117,5 +119,13 @@ public class Player {
 
     public String getUsername() {
         return username;
+    }
+
+    public boolean isMoved() {
+        return moved;
+    }
+
+    public void setMoved(boolean moved) {
+        this.moved = moved;
     }
 }
