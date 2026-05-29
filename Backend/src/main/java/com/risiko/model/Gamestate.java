@@ -140,18 +140,19 @@ public class Gamestate {
 
         for (Player p : players) {
             if (p.hasTerritory(toTerritory)) {
+                Map<Territorries, Integer> territories = p.getTerritories();
                 attackerRolls = dice(Math.min(sum, 3));
-                defenderRolls = dice(Math.min(p.getTerritories().get(toTerritory), 2));
+                defenderRolls = dice(Math.min(territories.get(toTerritory), 2));
                 lostTroopsDefence = 0;
                 lostTroopsAttack = 0;
-                if (sum == 1) {
+                if (sum == 1 || territories.get(toTerritory) == 1) {
                     if (attackerRolls.get(0) > defenderRolls.get(0)) {
                         lostTroopsDefence = 1;
                     } else {
                         lostTroopsAttack = 1;
                     }
                 } else {
-                    for (int i = 0; i < Math.min(Math.min(p.getTerritories().get(toTerritory), 2), sum - 1); i++) {
+                    for (int i = 0; i < Math.min(Math.min(territories.get(toTerritory), 2), sum - 1); i++) {
                         if (attackerRolls.get(i) > defenderRolls.get(i)) {
                             lostTroopsDefence++;
                         } else {
