@@ -175,6 +175,30 @@ class RoomTest {
             assertThat(room.getPlayers()).hasSize(1);
             assertThat(room.getPlayers().get(0).getUserId()).isEqualTo(2L);
         }
+
+        @Test
+        void wennSpielGestartet_entferntTrotzdemSpieler() {
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            room.joinRoom(1L, false);
+            ReflectionTestUtils.setField(room, "gameStarted", true);
+
+            room.leaveRoom(1L);
+
+            assertThat(room.getPlayers()).isEmpty();
+        }
+    }
+
+    @Nested
+    class JoinRoom {
+
+        @Test
+        void wennSpielGestartet_wirftException() {
+            ReflectionTestUtils.setField(room, "gameStarted", true);
+
+            assertThatThrownBy(() -> room.joinRoom(1L, false))
+                    .isInstanceOf(AppException.class)
+                    .hasMessageContaining("Cannot join a game that has already started");
+        }
     }
 
     @Nested

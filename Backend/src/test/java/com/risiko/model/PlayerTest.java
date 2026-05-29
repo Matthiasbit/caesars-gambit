@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -102,6 +103,21 @@ class PlayerTest {
 
             assertThat(player.getTerritories().get(Territorries.PALATIN)).isEqualTo(4);
         }
+
+        @Test
+        void zuWenigTruppen_wirftException() {
+            // troopstoDist = 0 nach setUp
+            assertThatThrownBy(() -> player.distTroops(Territorries.PALATIN, 1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Cannot distribute more troops than available");
+        }
+
+        @Test
+        void negativeSumme_wirftException() {
+            assertThatThrownBy(() -> player.distTroops(Territorries.PALATIN, -1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Cannot distribute negative troops");
+        }
     }
 
     @Nested
@@ -123,6 +139,61 @@ class PlayerTest {
             player.moveTroops(Territorries.PALATIN, Territorries.LATERANO, 1);
 
             assertThat(player.getTerritories().get(Territorries.LATERANO)).isEqualTo(2);
+        }
+
+        @Test
+        void summeNullOderNegativ_wirftException() {
+            assertThatThrownBy(() -> player.moveTroops(Territorries.PALATIN, Territorries.LATERANO, 0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Die Anzahl der zu verschiebenden Truppen muss positiv sein.");
+        }
+
+        @Test
+        void quellgebietNichtImBesitz_wirftException() {
+            assertThatThrownBy(() -> player.moveTroops(Territorries.EICHENWALD, Territorries.LATERANO, 1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Das Quellgebiet geh\u00f6rt nicht dem aktuellen Spieler.");
+        }
+
+        @Test
+        void zielgebietNichtImBesitz_wirftException() {
+            assertThatThrownBy(() -> player.moveTroops(Territorries.PALATIN, Territorries.EICHENWALD, 1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Das Zielgebiet geh\u00f6rt nicht dem aktuellen Spieler.");
+        }
+
+        @Test
+        void gebieteNichtVerbunden_wirftException() {
+            // Neuer Spieler mit zwei nicht verbundenen Gebieten
+            Player p = new Player(1L, userRepository, gameController);
+            p.setTroopstoDist(5);
+            p.setTerritories(List.of(Territorries.PALATIN, Territorries.EICHENWALD));
+            p.setTroopstoDist(3);
+            p.distTroops(Territorries.PALATIN, 1); // PALATIN = 2 Truppen
+
+            assertThatThrownBy(() -> p.moveTroops(Territorries.PALATIN, Territorries.EICHENWALD, 1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Die Gebiete sind nicht benachbart.");
+        }
+
+        @Test
+        void nichtGenugTruppen_wirftException() {
+            // PALATIN hat 1 Truppe, sum=1 → 1 <= 1 → Exception
+            assertThatThrownBy(() -> player.moveTroops(Territorries.PALATIN, Territorries.LATERANO, 1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Nicht genug Truppen zum Verschieben.");
+        }
+
+        @Test
+        void pfadMitZyklusImGraphen_decktVisitedZweigAb() {
+            Player p = new Player(1L, userRepository, gameController);
+            p.setTerritories(List.of(Territorries.AGUALAINE, Territorries.AUGUSTA_NEMETERS, Territorries.FARNOVIA));
+            p.setTroopstoDist(5);
+            p.distTroops(Territorries.AGUALAINE, 1); 
+
+            p.moveTroops(Territorries.AGUALAINE, Territorries.FARNOVIA, 1);
+
+            assertThat(p.getTerritories().get(Territorries.AGUALAINE)).isEqualTo(1);
         }
     }
 

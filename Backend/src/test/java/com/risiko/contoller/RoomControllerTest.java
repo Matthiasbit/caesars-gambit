@@ -111,6 +111,34 @@ class RoomControllerTest {
 
             verify(roomService).joinRoom(1, 1L, true);
         }
+
+        @Test
+        void hostAlsStringWert_wirdAlsHostMarkiert() throws Exception {
+            User user = new User();
+            user.setId(1L);
+            when(authService.getUserFromAuth()).thenReturn(user);
+            when(roomService.joinRoom(1, 1L, true)).thenReturn(true);
+
+            mockMvc.perform(post("/api/rooms/join/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"host\": \"true\"}"))
+                    .andExpect(status().isOk());
+
+            verify(roomService).joinRoom(1, 1L, true);
+        }
+
+        @Test
+        void ohneBody_trittAlsNichtHostBei() throws Exception {
+            User user = new User();
+            user.setId(1L);
+            when(authService.getUserFromAuth()).thenReturn(user);
+            when(roomService.joinRoom(1, 1L, false)).thenReturn(true);
+
+            mockMvc.perform(post("/api/rooms/join/1"))
+                    .andExpect(status().isOk());
+
+            verify(roomService).joinRoom(1, 1L, false);
+        }
     }
 
     @Nested
