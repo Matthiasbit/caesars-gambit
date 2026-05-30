@@ -49,7 +49,7 @@ public class GameController {
         }
 
         player.setEmitter(emitter);
-        emitter.onCompletion(() -> player.setEmitter(null));
+        emitter.onCompletion(() -> System.out.println("SSE connection completed for player " + player.getUsername()));
         emitter.onTimeout(() -> player.setEmitter(null));
         emitter.onError(e -> player.setEmitter(null));
 
