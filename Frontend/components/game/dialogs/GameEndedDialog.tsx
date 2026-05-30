@@ -4,12 +4,11 @@ import { getColorForOwner } from '@/lib/useOwnerColorMap'
 interface GameEndedDialogProps {
     winner: string | null
     ownerColorMap: Record<string, string>
+    roomId: string
 }
 
-export function GameEndedDialog({ winner, ownerColorMap }: GameEndedDialogProps) {
+export function GameEndedDialog({ winner, ownerColorMap, roomId }: GameEndedDialogProps) {
     const router = useRouter()
-    const searchParams = new URLSearchParams(window.location.search)
-    const roomId = searchParams.get('roomId')
 
     if (!winner) return null
 

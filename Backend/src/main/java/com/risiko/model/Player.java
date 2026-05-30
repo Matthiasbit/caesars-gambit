@@ -34,7 +34,7 @@ public class Player {
         }
     }
 
-    public java.util.Map<Territorries, Integer> getTerritories() {
+    public Map<Territorries, Integer> getTerritories() {
         return territories == null ? Collections.emptyMap() : territories;
     }
 
@@ -127,5 +127,20 @@ public class Player {
 
     public void setMoved(boolean moved) {
         this.moved = moved;
+    }
+
+    public int getTroopsOnTerritory(Territorries territory) {
+        return territories.getOrDefault(territory, 0);
+    }
+
+    public void removeTroopsFromTerritory(Territorries territory, int troops) {
+        if (!territories.containsKey(territory)) {
+            throw new IllegalArgumentException("Das Gebiet gehört nicht dem Spieler.");
+        }
+        int currentTroops = territories.get(territory);
+        if (currentTroops < troops) {
+            throw new IllegalArgumentException("Nicht genug Truppen auf dem Gebiet.");
+        }
+        territories.put(territory, currentTroops - troops);
     }
 }

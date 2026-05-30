@@ -290,7 +290,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     return (
         <>
             <GameErrorDialog isOpen={gameError !== null} message={gameError} onClose={() => setGameError(null)} />
-            <GameEndedDialog winner={eventsource.gameEnded} ownerColorMap={ownerColorMap} />
+            <GameEndedDialog winner={eventsource.gameEnded} ownerColorMap={ownerColorMap} roomId={roomId} />
             <ContinentConqueredDialog 
                 data={eventsource.continentConquered} 
                 onClose={() => eventsource.setContinentConquered(null)}
