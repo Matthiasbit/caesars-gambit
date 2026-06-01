@@ -131,9 +131,11 @@ public class Gamestate {
         if (currentPlayer.getTerritories().get(fromTerritory) <= sum) {
             throw new IllegalArgumentException("Nicht genug Truppen für diesen Angriff.");
         }
-
         if (currentPlayer.isMoved()) {
             throw new IllegalArgumentException("Nachdem Truppen verschoben wurden, ist kein Angriff mehr möglich.");
+        }
+        if (players.stream().anyMatch(p -> p.getTroopstoDist() > 0)) {
+            throw new IllegalArgumentException("Ein Spieler hat noch Truppen zu verteilen. Alle Spieler müssen ihre Truppen verteilen, bevor ein Angriff möglich ist.");
         }
 
         List<Integer> attackerRolls = null;
