@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -223,14 +225,15 @@ class GamestateTest {
         void setUp() {
             attacker = makePlayer(1L);
             attacker.setTerritories(List.of(Territorries.PALATIN, Territorries.LATERANO));
-            attacker.setTroopstoDist(10);
+            attacker.setTroopstoDist(7);
             attacker.distTroops(Territorries.PALATIN, 5); 
 
             defender = makePlayer(2L);
             defender.setTerritories(List.of(Territorries.FORUM_TRASTEVEVEE));
 
-            gamestate = new Gamestate(room, new java.util.ArrayList<>(List.of(attacker, defender)), gameController);
-            org.springframework.test.util.ReflectionTestUtils.setField(gamestate, "currentPlayer", attacker);
+            gamestate = new Gamestate(room, new ArrayList<>(List.of(attacker, defender)), gameController);
+            ReflectionTestUtils.setField(gamestate, "currentPlayer", attacker);
+            gamestate.getPlayers().forEach(p -> p.setTroopstoDist(0));
         }
 
         @Test
@@ -296,13 +299,17 @@ class GamestateTest {
             Player a = makePlayer(1L);
             a.setTerritories(List.of(Territorries.PALATIN, Territorries.LATERANO, Territorries.FORUM_TRASTEVEVEE));
             a.setTroopstoDist(10);
-            a.distTroops(Territorries.FORUM_TRASTEVEVEE, 5); // FORUM_TRASTEVEVEE = 6 Truppen
+            a.distTroops(Territorries.FORUM_TRASTEVEVEE, 5); 
 
             Player d = makePlayer(2L);
             d.setTerritories(List.of(Territorries.CAMPANIA_A_LAPPE));
 
+            a.setTroopstoDist(0);
+            d.setTroopstoDist(0);
             Gamestate gs = new Gamestate(room, new java.util.ArrayList<>(List.of(a, d)), gameController);
-            org.springframework.test.util.ReflectionTestUtils.setField(gs, "currentPlayer", a);
+            ReflectionTestUtils.setField(gs, "currentPlayer", a);
+            ReflectionTestUtils.setField(a, "troopstoDist", 0);
+            ReflectionTestUtils.setField(d, "troopstoDist", 0);
 
             try (MockedStatic<Gamestate> mockedDice = mockStatic(Gamestate.class)) {
                 mockedDice.when(() -> Gamestate.dice(2)).thenReturn(List.of(6, 5));

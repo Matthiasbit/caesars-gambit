@@ -88,7 +88,9 @@ public class Gamestate {
         currentPlayer.setMoved(false);
         int currentIndex = players.indexOf(currentPlayer);
         int nextIndex = (currentIndex + 1) % players.size();
-        checkIfGameEnded();
+        if (checkIfGameEnded()) {
+            return;
+        }
         while (players.get(nextIndex).getTerritories().size() == 0) {
             nextIndex = (nextIndex + 1) % players.size();
         }
@@ -96,7 +98,7 @@ public class Gamestate {
         nextMove();
     }
 
-    public void checkIfGameEnded() {
+    public boolean checkIfGameEnded() {
         List<Player> activePlayers = players.stream()
                 .filter(p -> p.getTerritories().size() > 0)
                 .collect(Collectors.toList());
@@ -108,7 +110,9 @@ public class Gamestate {
                     .collect(Collectors.toList());
             gameController.broadcastEvent(emitters, "gameEnded", "Player " + winner.username + " has won the game!");
             room.endGame();
+            return true;
         }
+        return false;
     }
 
     public void attack(Territorries fromTerritory, Territorries toTerritory, int sum) throws InterruptedException {
@@ -127,9 +131,11 @@ public class Gamestate {
         if (currentPlayer.getTerritories().get(fromTerritory) <= sum) {
             throw new IllegalArgumentException("Nicht genug Truppen für diesen Angriff.");
         }
-
         if (currentPlayer.isMoved()) {
             throw new IllegalArgumentException("Nachdem Truppen verschoben wurden, ist kein Angriff mehr möglich.");
+        }
+        if (players.stream().anyMatch(p -> p.getTroopstoDist() > 0)) {
+            throw new IllegalArgumentException("Ein Spieler hat noch Truppen zu verteilen. Alle Spieler müssen ihre Truppen verteilen, bevor ein Angriff möglich ist.");
         }
 
         List<Integer> attackerRolls = null;
@@ -163,6 +169,7 @@ public class Gamestate {
                     p.removeTroopsFromTerritory(toTerritory, lostTroopsDefence);
                     currentPlayer.removeTroopsFromTerritory(fromTerritory, lostTroopsAttack);
                 }
+                break;
             }
         }
 
@@ -249,5 +256,9 @@ public class Gamestate {
             }
         }
         return null;
+    }
+
+    public List<Player> getPlayers() {
+        return players;
     }
 }
