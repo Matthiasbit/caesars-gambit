@@ -96,7 +96,7 @@ public class GameController {
             throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
         room.getGamestate().attack(Territorries.getTerritorryByDisplayName((String) request.get("from")),
-                Territorries.getTerritorryByDisplayName((String) request.get("to")), (Integer) request.get("sum"));
+                Territorries.getTerritorryByDisplayName((String) request.get("to")), ((Number) request.get("sum")).intValue());
         room.getGamestate().sendGameStateUpdate();
     }
 

@@ -59,16 +59,21 @@ public class Gamestate {
                 "gameStarted",
                 "The game has started!");
         currentPlayer = players.get(0);
-        nextMove();
+        initializeMove();
+        currentPlayer.askDistTroops();
     }
 
-    public void nextMove() {
+    private void initializeMove() {
         sendGameStateUpdate();
         List<SseEmitter> emitters = players.stream()
                 .map(p -> p.emitter)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         gameController.broadcastEvent(emitters, "currentPlayer", currentPlayer.username);
+    }
+
+    public void nextMove() {
+        initializeMove();
         currentPlayer.setTroopstoDist(calculateReinforcements(currentPlayer));
         currentPlayer.askDistTroops();
     }
@@ -88,7 +93,9 @@ public class Gamestate {
         currentPlayer.setMoved(false);
         int currentIndex = players.indexOf(currentPlayer);
         int nextIndex = (currentIndex + 1) % players.size();
-        checkIfGameEnded();
+        if (checkIfGameEnded()) {
+            return;
+        }
         while (players.get(nextIndex).getTerritories().size() == 0) {
             nextIndex = (nextIndex + 1) % players.size();
         }
@@ -96,7 +103,7 @@ public class Gamestate {
         nextMove();
     }
 
-    public void checkIfGameEnded() {
+    public boolean checkIfGameEnded() {
         List<Player> activePlayers = players.stream()
                 .filter(p -> p.getTerritories().size() > 0)
                 .collect(Collectors.toList());
@@ -108,7 +115,9 @@ public class Gamestate {
                     .collect(Collectors.toList());
             gameController.broadcastEvent(emitters, "gameEnded", "Player " + winner.username + " has won the game!");
             room.endGame();
+            return true;
         }
+        return false;
     }
 
     public void attack(Territorries fromTerritory, Territorries toTerritory, int sum) throws InterruptedException {
@@ -132,8 +141,8 @@ public class Gamestate {
             throw new IllegalArgumentException("Nachdem Truppen verschoben wurden, ist kein Angriff mehr möglich.");
         }
 
-        List<Integer> attackerRolls = null;
-        List<Integer> defenderRolls = null;
+        List<Integer> attackerRolls = Collections.emptyList();
+        List<Integer> defenderRolls = Collections.emptyList();
         int lostTroopsAttack = 0;
         int lostTroopsDefence = 0;
         boolean territoryWon = false;
@@ -145,7 +154,8 @@ public class Gamestate {
                 defenderRolls = dice(Math.min(defenderTroops, 2));
                 lostTroopsDefence = 0;
                 lostTroopsAttack = 0;
-                for (int i = 0; i < Math.min(Math.min(defenderTroops, 2), sum); i++) {
+                int comparisons = Math.min(attackerRolls.size(), defenderRolls.size());
+                for (int i = 0; i < comparisons; i++) {
                     if (attackerRolls.get(i) > defenderRolls.get(i)) {
                         lostTroopsDefence++;
                     } else {
@@ -160,9 +170,9 @@ public class Gamestate {
                     currentPlayer.setMoved(false);
                 } else {
                     territoryWon = false;
-                    p.removeTroopsFromTerritory(toTerritory, lostTroopsDefence);
                     currentPlayer.removeTroopsFromTerritory(fromTerritory, lostTroopsAttack);
                 }
+                break;
             }
         }
 

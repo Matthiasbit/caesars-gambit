@@ -24,6 +24,7 @@ public class Player {
         this.gameController = gameController;
         Optional<User> user = userRepository.findById(userId);
         this.username = user.isPresent() ? user.get().getUsername() : "Unknown";
+        this.territories = new HashMap<>();
     }
 
     public void setTerritories(List<Territorries> territories) {
@@ -75,11 +76,14 @@ public class Player {
     }
 
     public int defend(Territorries territory, int lostTroops) {
-        if (territories.get(territory) <= lostTroops) {
+        int currentTroops = territories.getOrDefault(territory, 0);
+        if (currentTroops <= lostTroops) {
             territories.remove(territory);
             return 0;
         }
-        return territories.get(territory) - lostTroops;
+        int remaining = Math.max(0, currentTroops - lostTroops);
+        territories.put(territory, remaining);
+        return remaining;
     }
 
     public void getTerritory(Territorries territory) {
@@ -87,7 +91,7 @@ public class Player {
     }
 
     public void askDistTroops() {
-        if (troopstoDist == 0) {
+        if (troopstoDist <= 0) {
             return;
         }
         gameController.broadcastEvent(Collections.singletonList(emitter), "askDistTroops", troopstoDist);
@@ -111,6 +115,7 @@ public class Player {
 
     public void setTroopstoDist(int troopstoDist) {
         this.troopstoDist += troopstoDist;
+        if (this.troopstoDist < 0) this.troopstoDist = 0;
     }
 
     public int getTroopstoDist() {
@@ -138,9 +143,7 @@ public class Player {
             throw new IllegalArgumentException("Das Gebiet gehört nicht dem Spieler.");
         }
         int currentTroops = territories.get(territory);
-        if (currentTroops < troops) {
-            throw new IllegalArgumentException("Nicht genug Truppen auf dem Gebiet.");
-        }
-        territories.put(territory, currentTroops - troops);
+        int remaining = Math.max(0, currentTroops - troops);
+        territories.put(territory, remaining);
     }
 }
