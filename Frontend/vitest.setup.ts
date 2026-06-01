@@ -14,24 +14,44 @@ class ResizeObserverMock {
 
 global.ResizeObserver = ResizeObserverMock
 
-vi.mock('next/navigation', () => ({
-  useRouter() {
-    return {
-      push: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-      back: vi.fn(),
+class IntersectionObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+global.IntersectionObserver = IntersectionObserverMock
+
+vi.mock('next/dynamic', () => ({
+  default: (loader: any) => {
+    const React = require('react')
+    let Component: any = null
+    loader().then((mod: any) => {
+      Component = mod.default || mod
+    })
+    return (props: any) => {
+      if (!Component) return null
+      return React.createElement(Component, props)
     }
   },
-  useSearchParams() {
-    return new URLSearchParams()
-  },
-  usePathname() {
-    return '/'
-  },
-  useParams() {
-    return {}
-  },
+}))
+
+const mockRouter = {
+  push: vi.fn(),
+  replace: vi.fn(),
+  prefetch: vi.fn(),
+  back: vi.fn(),
+}
+
+const mockUsePathname = vi.fn(() => '/')
+const mockUseSearchParams = vi.fn(() => new URLSearchParams())
+const mockUseParams = vi.fn(() => ({}))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => mockRouter,
+  usePathname: () => mockUsePathname(),
+  useSearchParams: () => mockUseSearchParams(),
+  useParams: () => mockUseParams(),
 }))
 
 afterEach(() => {
