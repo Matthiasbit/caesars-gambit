@@ -14,7 +14,6 @@ import org.mockito.MockedStatic;
 
 import com.risiko.contoller.GameController;
 import com.risiko.repository.UserRepository;
-import com.risiko.model.User;
 
 class AttackReproductionTest {
 

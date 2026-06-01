@@ -257,4 +257,8 @@ public class Gamestate {
         }
         return null;
     }
+
+    public List<Player> getPlayers() {
+        return players;
+    }
 }
