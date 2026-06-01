@@ -65,7 +65,7 @@ export function GamePhaseTimeline({
     <div className={`w-full px-4 py-3 rounded-lg border transition-all duration-300 ${isMyTurn ? 'border-orange-500/60 bg-orange-500/5 shadow-[0_0_15px_rgba(249,115,22,0.1)]' : 'border-blue-500/20 bg-blue-500/5'}`}>
       <div className="flex justify-between items-center mb-4">
         <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-300/70">
-          {isMyTurn ? 'Dein Spielzug' : `${eventsource.currentPlayer} am Zug`}
+          {isMyTurn ? 'Du bist am Zug' : `${eventsource.currentPlayer} ist am Zug`}
         </div>
         {isMyTurn && (
           <Button 

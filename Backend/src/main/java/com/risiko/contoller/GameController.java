@@ -60,6 +60,8 @@ public class GameController {
                 player.askDistTroops();
                 broadcastEvent(Collections.singletonList(emitter), "currentPlayer",
                         room.getGamestate().getCurrentPlayer().getUsername());
+                broadcastEvent(Collections.singletonList(emitter), "initialPhase", room.getGamestate().isInitialPhase());
+                broadcastEvent(Collections.singletonList(emitter), "gameStarted", true);
             }
         } catch (IOException e) {
             emitter.completeWithError(e);

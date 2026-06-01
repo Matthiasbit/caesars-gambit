@@ -5,11 +5,13 @@ import { Lobby } from "@/components/Lobby";
 import GamePage from "@/components/game/GamePage";
 import { useRouter } from "next/navigation";
 import { useGameStream } from '@/components/hooks/useGameStream';
+import { useGetCurrentUser } from "@/components/api/getCurrentUser";
 
 export default function RoomPage() {
   const { roomId } = useParams() as { roomId?: string };
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentUser = useGetCurrentUser();
 
   const eventsource = useGameStream(
     roomId,
@@ -18,11 +20,21 @@ export default function RoomPage() {
     }
   );
 
-   useEffect(() => {
+  useEffect(() => {
     if (searchParams.get("started") === "true") {
       eventsource.setGameStarted(true);
     }
   }, [searchParams, eventsource.setGameStarted, eventsource]);
+
+  // Redirect to invite page if user is not in the room yet
+  useEffect(() => {
+    if (currentUser.isSuccess && currentUser.data && eventsource.playerNames.length > 0) {
+      const isPlayerInRoom = eventsource.playerNames.includes(currentUser.data.username);
+      if (!isPlayerInRoom && !eventsource.gameStarted) {
+        router.push(`/invite/${roomId}`);
+      }
+    }
+  }, [currentUser, eventsource.playerNames, eventsource.gameStarted, roomId, router]);
 
   return (
     <>

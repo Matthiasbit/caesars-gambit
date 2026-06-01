@@ -54,11 +54,11 @@ export default function InviteRoomPage() {
 
   if (currentUser.isError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
           <Image src="/assets/Karte-neutral.svg" alt="Map background" fill sizes="100vw" priority className="object-cover" />
         </div>
-        <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+        <main className="relative z-10 mx-auto flex max-w-4xl items-center justify-center px-6 py-16">
           <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur-md">
             <h1 className="text-3xl font-bold">Session konnte nicht geprüft werden</h1>
             <p className="mt-3 text-sm text-slate-300">Bitte versuche es in ein paar Minuten erneut.</p>
@@ -73,11 +73,7 @@ export default function InviteRoomPage() {
 
   if (!parsedRoomId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-          <Image src="/assets/Karte-neutral.svg" alt="Map background" fill sizes="100vw" priority className="object-cover" />
-        </div>
-        <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+        <main className="relative z-10 mx-auto flex max-w-4xl items-center justify-center px-6 py-16">
           <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur-md">
             <h1 className="text-3xl font-bold">Invite ist ungültig</h1>
             <p className="mt-3 text-sm text-slate-300">Der Link enthält keine gültige Raum-ID.</p>
@@ -86,17 +82,13 @@ export default function InviteRoomPage() {
             </Link>
           </div>
         </main>
-      </div>
     );
   }
 
   if (currentUser.isLoading || (hasUser && !joinError)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-          <Image src="/assets/Karte-neutral.svg" alt="Map background" fill sizes="100vw" priority className="object-cover" />
-        </div>
-        <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+
+        <main className="relative z-10 mx-auto flex max-w-4xl items-center justify-center px-6 py-16">
           <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur-md">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-blue-400/20 bg-blue-400/10">
               <Spinner className="size-6 text-blue-300" />
@@ -106,17 +98,13 @@ export default function InviteRoomPage() {
             <p className="mt-2 text-xs text-slate-400">{invitePath}</p>
           </div>
         </main>
-      </div>
     );
   }
 
   if (joinError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-          <Image src="/assets/Karte-neutral.svg" alt="Map background" fill sizes="100vw" priority className="object-cover" />
-        </div>
-        <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+
+        <main className="relative z-10 mx-auto flex  max-w-4xl items-center justify-center px-6 py-16">
           <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur-md">
             <h1 className="text-3xl font-bold">Invite konnte nicht geladen werden</h1>
             <p className="mt-3 text-sm text-slate-300">{joinError}</p>
@@ -125,7 +113,6 @@ export default function InviteRoomPage() {
             </Link>
           </div>
         </main>
-      </div>
     );
   }
  

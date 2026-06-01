@@ -127,21 +127,7 @@ export const TerritoryLabels: React.FC<TerritoryLabelsProps> = ({
                 return (
                     <g
                         key={territory.territory}
-                        onMouseEnter={() => onTerritoryHover?.(territory.territory)}
-                        onMouseLeave={() => onTerritoryHover?.(null)}
                     >
-                        <circle
-                            cx={pos.x}
-                            cy={pos.y}
-                            r={40}
-                            fill="transparent"
-                            pointerEvents="auto"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => onTerritoryButtonClick?.(territory.territory)}
-                            onMouseEnter={() => onTerritoryHover?.(territory.territory)}
-                            onMouseLeave={() => onTerritoryHover?.(null)}
-                            aria-label={`Territory ${territory.territory}`}
-                        />
                         <circle
                             cx={pos.x}
                             cy={pos.y}
