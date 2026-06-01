@@ -71,6 +71,9 @@ public class GameController {
     @PostMapping("/move")
     public void move(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
+        if (room.getGamestate().isInitialPhase()) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot move during initial setup phase");
+        }
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
@@ -88,6 +91,9 @@ public class GameController {
     @PostMapping("/attack")
     public void attack(@RequestBody Map<String, Object> request) throws InterruptedException {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
+        if (room.getGamestate().isInitialPhase()) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot attack during initial setup phase");
+        }
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
@@ -107,12 +113,16 @@ public class GameController {
         int sum = ((Number) request.get("sum")).intValue();
         room.getGamestate().getPlayerByUserId(authService.getUserFromAuth().getId())
                 .distTroops(Territorries.getTerritorryByDisplayName(to), sum);
+        room.getGamestate().checkInitialPhase();
         room.getGamestate().sendGameStateUpdate();
     }
 
     @PostMapping("/endTurn")
     public void endTurn(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
+        if (room.getGamestate().isInitialPhase()) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot end turn during initial setup phase");
+        }
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()

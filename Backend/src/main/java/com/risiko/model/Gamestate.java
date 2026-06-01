@@ -19,6 +19,7 @@ public class Gamestate {
     private Player currentPlayer;
     private final GameController gameController;
     private final Room room;
+    private boolean initialPhase = false;
 
     public Gamestate(Room room, List<Player> players, GameController gameController) {
         this.players = players;
@@ -45,21 +46,30 @@ public class Gamestate {
                 distributedTerritories.get(i).add(territoryList.get(territoryIndex));
             }
         }
+        
+        initialPhase = true;
         for (int i = 0; i < players.size(); i++) {
             players.get(i).setTerritories(distributedTerritories.get(i));
             players.get(i).setTroopstoDist(INITIAL_TROOPS);
-            players.get(i).askDistTroops();
-
         }
-        gameController.broadcastEvent(
-                players.stream()
-                        .map(p -> p.emitter)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList()),
-                "gameStarted",
-                "The game has started!");
+
         currentPlayer = players.get(0);
-        nextMove();
+        currentPlayer.setTroopstoDist(calculateReinforcements(currentPlayer));
+
+        for (Player p : players) {
+            p.askDistTroops();
+        }
+
+        List<SseEmitter> emitters = players.stream()
+                .map(p -> p.emitter)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        
+        gameController.broadcastEvent(emitters, "gameStarted", "The game has started!");
+        gameController.broadcastEvent(emitters, "initialPhase", true);
+        gameController.broadcastEvent(emitters, "currentPlayer", currentPlayer.username);
+        
+        sendGameStateUpdate();
     }
 
     public void nextMove() {
@@ -260,5 +270,24 @@ public class Gamestate {
 
     public List<Player> getPlayers() {
         return players;
+    }
+
+    public boolean isInitialPhase() {
+        return initialPhase;
+    }
+
+    public void checkInitialPhase() {
+        if (!initialPhase)
+            return;
+
+        boolean allDone = players.stream().allMatch(p -> p.getTroopstoDist() == 0);
+        if (allDone) {
+            initialPhase = false;
+            List<SseEmitter> emitters = players.stream()
+                    .map(p -> p.emitter)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            gameController.broadcastEvent(emitters, "initialPhase", false);
+        }
     }
 }

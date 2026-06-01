@@ -222,8 +222,13 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
             return
         }
 
-        if (eventsource.pendingDistCount) {
+        if (eventsource.pendingDistCount && eventsource.pendingDistCount > 0) {
             onDistSubmit(regionId)
+            return
+        }
+
+        if (eventsource.currentPlayer !== currentUsername) {
+            showGameError('Du bist derzeit nicht am Zug.')
             return
         }
 
@@ -275,7 +280,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }
 
     async function handleEndTurn() {
-        if (!eventsource.gameStateJson || eventsource.pendingDistCount != null) {
+        if (!eventsource.gameStateJson || (eventsource.pendingDistCount || 0) > 0) {
             return
         }
         
@@ -295,20 +300,6 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                 data={eventsource.continentConquered} 
                 onClose={() => eventsource.setContinentConquered(null)}
             />
-            {eventsource.pendingDistCount != null && (
-                <div style={{ position: 'fixed', right: 16, top: 16, zIndex: 2000 }}>
-                    <div className="rounded bg-[#0b1220] border border-[rgba(59,130,246,0.25)] px-4 py-3 text-white shadow">
-                        <div className="flex items-center gap-3">
-                            <div>
-                                <strong>{eventsource.pendingDistCount}</strong> Truppen verteilen — klicke auf ein Gebiet, das du besitzt.
-                            </div>
-                            <div>
-                                <button className="ml-2 px-2 py-1 bg-red-600 rounded" onClick={() => eventsource.setPendingDistCount(null)}>Abbrechen</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
             <div style={{ background: '#07142a', height: "100vh", display: "flex", color: "white", width: "100%" }}>
                 <div
                     className={`gap-6 rounded-32`}
@@ -335,6 +326,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                             eventsource={eventsource} 
                             currentUsername={currentUsername} 
                             moveExecuted={moveExecuted}
+                            onEndTurn={handleEndTurn}
                         />
                         <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
                             <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(189,215,255,0.65)' }}>Chat</h2>
@@ -368,24 +360,21 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 territories={territories}
                                 ownerColorMap={ownerColorMap}
                             />
-                            <button 
-                                onClick={() => handleEndTurn()}
-                                className="absolute bottom-4 left-4 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors"
-                                style={{visibility: eventsource.currentPlayer !== currentUsername ? "hidden" : "visible"}}
-                            >
-                                Zug beenden
-                            </button>
                         </div>
                     </div>
                 </div>
                 <DistributionDialog
                     isOpen={dialogTerritory != null || moveDialog || attackDialog}
-                    territoryName={moveDialog ? "Truppen hierhin verschieben " + moveTo : attackDialog ? "Truppen angreifen " + moveTo : dialogTerritory || ""}
                     availableTroops={(moveDialog || attackDialog) ? moveTroopsCount || 0 : eventsource.pendingDistCount || 0}
                     onConfirm={moveDialog ? handleMoveConfirm : attackDialog ? handleAttackConfirm : handleDialogConfirm}
                     onCancel={() => { setDialogTerritory(null); setMoveDialog(false); setAttackDialog(false) }}
                     moveDialog={moveDialog}
                     attackDialog={attackDialog}
+                    moveFrom={moveFrom}
+                    moveTo={moveTo}
+                    distTo={dialogTerritory}
+                    ownerColorMap={ownerColorMap}
+                    territories={territories}
                 />
             </div>
         </>

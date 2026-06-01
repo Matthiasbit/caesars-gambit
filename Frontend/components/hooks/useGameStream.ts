@@ -19,6 +19,7 @@ export type EventsourceTypes = {
   gameStateJson: string | null;
   pendingDistCount: number | null;
   currentPlayer: string | null;
+  initialPhase: boolean;
   continentConquered: { player: string; continent: string } | null;
   attackResult: AttackResult | null;
   gameEnded: string | null;
@@ -39,6 +40,7 @@ export function useGameStream(
   const [gameStateJson, setGameStateJson] = useState<string | null>(null);
   const [pendingDistCount, setPendingDistCount] = useState<number | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
+  const [initialPhase, setInitialPhase] = useState<boolean>(false);
   const [continentConquered, setContinentConquered] = useState<{ player: string; continent: string } | null>(null);
   const [attackResult, setAttackResult] = useState<AttackResult | null>(null);
   const [gameEnded, setGameEnded] = useState<string | null>(null);
@@ -75,6 +77,10 @@ export function useGameStream(
     eventSource.addEventListener('gameStarted', () => {
       setGameStarted(true);
       onGameStartedRef.current?.();
+    });
+
+    eventSource.addEventListener('initialPhase', (e: MessageEvent) => {
+      setInitialPhase(e.data === 'true');
     });
 
     const flushQueuedEvents = () => {
@@ -199,6 +205,7 @@ export function useGameStream(
     gameStateJson,
     pendingDistCount,
     currentPlayer,
+    initialPhase,
     continentConquered,
     attackResult,
     gameEnded,

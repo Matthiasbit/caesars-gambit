@@ -6,6 +6,14 @@ if (!global.fetch) {
   global.fetch = vi.fn()
 }
 
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+global.ResizeObserver = ResizeObserverMock
+
 vi.mock('next/navigation', () => ({
   useRouter() {
     return {
