@@ -35,14 +35,16 @@ public class GameController {
     public SseEmitter stream(@PathVariable("roomId") String roomId,
             @RequestParam(value = "token", required = false) String tokenParam, HttpServletRequest request) {
 
+        // Validierungen BEVOR Emitter erstellt wird - Exceptions können hier geworfen werden
         Room room = roomService.getRoomById(Integer.parseInt(roomId));
-
-        SseEmitter emitter = new SseEmitter(0L);
 
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
+
+        // Emitter erstellen NACH erfolgreicher Validierung
+        SseEmitter emitter = new SseEmitter(0L);
 
         if (player.emitter != null) {
             player.emitter.complete();
@@ -142,5 +144,21 @@ public class GameController {
                 emitter.completeWithError(e);
             }
         }
+    }
+
+    @ExceptionHandler(AppException.class)
+    public org.springframework.http.ResponseEntity<?> handleAppException(AppException e, HttpServletRequest request) {
+        HttpStatus status = e.getStatus();
+        
+        // Für SSE-Anfragen: nur HTTP Status ohne Body
+        if (request.getRequestURI().contains("/stream/")) {
+            return org.springframework.http.ResponseEntity.status(status).build();
+        }
+        
+        // Für REST-Anfragen: JSON Response
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("status", status.value());
+        response.put("message", e.getMessage());
+        return org.springframework.http.ResponseEntity.status(status).body(response);
     }
 }
