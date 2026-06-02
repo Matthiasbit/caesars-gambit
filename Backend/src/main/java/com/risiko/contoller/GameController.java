@@ -35,15 +35,11 @@ public class GameController {
     public SseEmitter stream(@PathVariable("roomId") String roomId,
             @RequestParam(value = "token", required = false) String tokenParam, HttpServletRequest request) {
 
-        // Validierungen BEVOR Emitter erstellt wird - Exceptions können hier geworfen werden
         Room room = roomService.getRoomById(Integer.parseInt(roomId));
-
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
-
-        // Emitter erstellen NACH erfolgreicher Validierung
         SseEmitter emitter = new SseEmitter(0L);
 
         if (player.emitter != null) {

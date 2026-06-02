@@ -23,10 +23,11 @@ export default function RoomPage() {
   useEffect(() => {
     if (searchParams.get("started") === "true") {
       eventsource.setGameStarted(true);
+    } else if (searchParams.get("started") === undefined || searchParams.get("started") === "false") {
+      eventsource.setGameStarted(false);
     }
   }, [searchParams, eventsource.setGameStarted, eventsource]);
 
-  // Redirect to invite page if user is not in the room yet
   useEffect(() => {
     if (currentUser.isSuccess && currentUser.data && eventsource.playerNames.length > 0) {
       const isPlayerInRoom = eventsource.playerNames.includes(currentUser.data.username);
