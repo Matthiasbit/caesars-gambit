@@ -9,12 +9,18 @@ describe('DistributionDialog', () => {
 
   const defaultProps = {
     isOpen: true,
-    territoryName: 'Palatin',
     availableTroops: 10,
     onConfirm: mockOnConfirm,
     onCancel: mockOnCancel,
     moveDialog: false,
     attackDialog: false,
+    ownerColorMap: {},
+    territories: [
+        { territory: 'Palatin', owner: 'Player1', troops: 5 },
+        { territory: 'Forum', owner: 'Player2', troops: 3 }
+    ],
+    distTo: 'Palatin',
+    moveExecuted: false
   }
 
   beforeEach(() => {
@@ -35,62 +41,13 @@ describe('DistributionDialog', () => {
   })
 
   describe('Input Constraints', () => {
-    it('should have number input with min=1 and max=availableTroops', () => {
+    it('should have a slider with min=1 and max=availableTroops', () => {
       render(<DistributionDialog {...defaultProps} availableTroops={20} />)
       
-      const input = screen.getByRole('spinbutton') as HTMLInputElement
-      expect(input.type).toBe('number')
-      expect(input.min).toBe('1')
-      expect(input.max).toBe('20')
-      expect(input.value).toBe('1')
-    })
-  })
-
-  describe('Button Operations', () => {
-    it('should increment count on plus button click', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} />)
-      
-      const input = screen.getByRole('spinbutton') as HTMLInputElement
-      const plusBtn = screen.getByRole('button', { name: /\+/ })
-      
-      await user.click(plusBtn)
-      expect(input.value).toBe('2')
-    })
-
-    it('should decrement count on minus button click', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} />)
-      
-      const input = screen.getByRole('spinbutton') as HTMLInputElement
-      const plusBtn = screen.getByRole('button', { name: /\+/ })
-      const minusBtn = screen.getByRole('button', { name: /−|-/ })
-      
-      await user.click(plusBtn)
-      await user.click(minusBtn)
-      expect(input.value).toBe('1')
-    })
-
-    it('should not go below minimum (count=1) when minus button is clicked', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} />)
-      
-      const input = screen.getByRole('spinbutton') as HTMLInputElement
-      const minusBtn = screen.getByRole('button', { name: /−|-/ })
-      
-      await user.click(minusBtn)
-      expect(input.value).toBe('1')
-    })
-
-    it('should not go above maximum when plus button is clicked', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} availableTroops={1} />)
-      
-      const input = screen.getByRole('spinbutton') as HTMLInputElement
-      const plusBtn = screen.getByRole('button', { name: /\+/ })
-      
-      await user.click(plusBtn)
-      expect(input.value).toBe('1')
+      const slider = screen.getByRole('slider')
+      expect(slider).toHaveAttribute('aria-valuemin', '1')
+      expect(slider).toHaveAttribute('aria-valuemax', '20')
+      expect(slider).toHaveAttribute('aria-valuenow', '1')
     })
   })
 
@@ -105,20 +62,6 @@ describe('DistributionDialog', () => {
       expect(mockOnConfirm).toHaveBeenCalledWith(1)
     })
 
-    it('should call onConfirm with updated count after increment', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} />)
-      
-      const plusBtn = screen.getByRole('button', { name: /\+/ })
-      const confirmBtn = screen.getByRole('button', { name: /bestätigen|confirm/i })
-      
-      await user.click(plusBtn)
-      await user.click(plusBtn)
-      await user.click(confirmBtn)
-      
-      expect(mockOnConfirm).toHaveBeenCalledWith(3)
-    })
-
     it('should call onCancel on cancel button click', async () => {
       const user = userEvent.setup()
       render(<DistributionDialog {...defaultProps} />)
@@ -128,30 +71,6 @@ describe('DistributionDialog', () => {
       
       expect(mockOnCancel).toHaveBeenCalled()
       expect(mockOnConfirm).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('Keyboard Support', () => {
-    it('should confirm on Enter key', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} />)
-      
-      const input = screen.getByRole('spinbutton')
-      await user.click(input)
-      await user.keyboard('{Enter}')
-      
-      expect(mockOnConfirm).toHaveBeenCalledWith(1)
-    })
-
-    it('should cancel on Escape key', async () => {
-      const user = userEvent.setup()
-      render(<DistributionDialog {...defaultProps} />)
-      
-      const input = screen.getByRole('spinbutton')
-      await user.click(input)
-      await user.keyboard('{Escape}')
-      
-      expect(mockOnCancel).toHaveBeenCalled()
     })
   })
 })

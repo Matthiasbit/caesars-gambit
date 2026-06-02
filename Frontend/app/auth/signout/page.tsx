@@ -15,7 +15,7 @@ export default function SignoutPage() {
   }, [router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main className="flex items-center justify-center">
       <div className="text-center">
         <p className="text-lg">Signing out…</p>
       </div>

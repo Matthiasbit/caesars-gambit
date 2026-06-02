@@ -7,8 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.risiko.contoller.GameController;
+import com.risiko.exception.AppException;
 import com.risiko.model.dto.AttackResultDto;
 import com.risiko.model.dto.ContinentConquered;
 import com.risiko.model.dto.TerritoryStateDto;
@@ -19,6 +22,7 @@ public class Gamestate {
     private Player currentPlayer;
     private final GameController gameController;
     private final Room room;
+    private boolean initialPhase = false;
 
     public Gamestate(Room room, List<Player> players, GameController gameController) {
         this.players = players;
@@ -45,21 +49,30 @@ public class Gamestate {
                 distributedTerritories.get(i).add(territoryList.get(territoryIndex));
             }
         }
+        
+        initialPhase = true;
         for (int i = 0; i < players.size(); i++) {
             players.get(i).setTerritories(distributedTerritories.get(i));
             players.get(i).setTroopstoDist(INITIAL_TROOPS);
-            players.get(i).askDistTroops();
-
         }
-        gameController.broadcastEvent(
-                players.stream()
-                        .map(p -> p.emitter)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList()),
-                "gameStarted",
-                "The game has started!");
+
         currentPlayer = players.get(0);
-        nextMove();
+        currentPlayer.setTroopstoDist(calculateReinforcements(currentPlayer));
+
+        for (Player p : players) {
+            p.askDistTroops();
+        }
+
+        List<SseEmitter> emitters = players.stream()
+                .map(p -> p.emitter)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        
+        gameController.broadcastEvent(emitters, "gameStarted", "The game has started!");
+        gameController.broadcastEvent(emitters, "initialPhase", true);
+        gameController.broadcastEvent(emitters, "currentPlayer", currentPlayer.username);
+        
+        sendGameStateUpdate();
     }
 
     public void nextMove() {
@@ -137,6 +150,9 @@ public class Gamestate {
         if (players.stream().anyMatch(p -> p.getTroopstoDist() > 0)) {
             throw new IllegalArgumentException("Ein Spieler hat noch Truppen zu verteilen. Alle Spieler müssen ihre Truppen verteilen, bevor ein Angriff möglich ist.");
         }
+        if (initialPhase) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot attack during initial setup phase");
+        }
 
         List<Integer> attackerRolls = null;
         List<Integer> defenderRolls = null;
@@ -180,7 +196,8 @@ public class Gamestate {
                 lostTroopsDefence,
                 fromTerritory.getDisplayName(),
                 toTerritory.getDisplayName(),
-                territoryWon);
+                territoryWon,
+                sum);
 
         List<SseEmitter> emitters = players.stream()
                 .map(pl -> pl.emitter)
@@ -260,5 +277,24 @@ public class Gamestate {
 
     public List<Player> getPlayers() {
         return players;
+    }
+
+    public boolean isInitialPhase() {
+        return initialPhase;
+    }
+
+    public void checkInitialPhase() {
+        if (!initialPhase)
+            return;
+
+        boolean allDone = players.stream().allMatch(p -> p.getTroopstoDist() == 0);
+        if (allDone) {
+            initialPhase = false;
+            List<SseEmitter> emitters = players.stream()
+                    .map(p -> p.emitter)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            gameController.broadcastEvent(emitters, "initialPhase", false);
+        }
     }
 }

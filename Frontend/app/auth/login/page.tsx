@@ -2,18 +2,12 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/components/ui/item";
 import { SquareArrowOutUpRight } from "lucide-react";
 import { AUTH_LOGIN_REASONS, getAuthLoginMessage } from "@/lib/authMessages";
 import { normalizeInternalRedirect } from "@/lib/invite";
-
-import packageJson from "@/package.json";
-
-const APP_VERSION = packageJson.version;
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -56,28 +50,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
-      <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-        <Image
-          src="/assets/Karte-neutral.svg"
-          alt="map bg"
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover"
-        />
-      </div>
-
-      <nav className="relative z-10 border-b border-slate-700/30 bg-slate-900/50 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <Image src="/assets/logo.svg" alt="logo" width={32} height={32} loading="eager" className="w-8 h-8 object-contain" />
-            <span className="sr-only">Startseite</span>
-          </Link>
-          <h1 className="text-xl font-semibold">Caesar&apos;s Gambit</h1>
-        </div>
-      </nav>
-
+    <div className="text-white relative overflow-hidden">
       <main className="relative z-10 mx-auto grid min-h-[70vh] max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-2 text-sm text-blue-100 backdrop-blur-sm">
@@ -137,13 +110,6 @@ function LoginForm() {
           </Item>
         </section>
       </main>
-
-      <footer className="relative z-10 mt-8 border-t border-slate-700/30 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 text-center text-sm text-slate-400 md:flex-row md:items-center md:justify-between md:text-left">
-          <p>© 2026 Caesar&apos;s Gambit</p>
-          <p className="text-xs text-slate-500">Version {APP_VERSION}</p>
-        </div>
-      </footer>
     </div>
   );
 }

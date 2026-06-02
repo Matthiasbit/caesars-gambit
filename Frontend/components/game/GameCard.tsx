@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import styles from './GameCard.module.css'
 import { TerritoryLabels } from './TerritoryLabels'
@@ -24,30 +24,24 @@ export interface GameCardProps {
     onTerritoryAnimationEnd?: (territoryId: string) => void
     continentConquered?: { player: string; continent: string } | null
     playerNames?: string[]
+    clickableRegions?: string[]
 }
 
-export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, continentConquered, playerNames = [] }: GameCardProps) {
+export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, continentConquered, playerNames = [], clickableRegions = [] }: GameCardProps) {
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
-    const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [svgLoaded, setSvgLoaded] = useState(false)
     const ownerColorMap = useOwnerColorMap(playerNames)
 
-    useEffect(() => {
-        if (!gameStateJson) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setTerritories([])
-            return
-        }
-
+    const territories = useMemo<TerritoryData[]>(() => {
+        if (!gameStateJson) return []
         try {
             const parsed = JSON.parse(gameStateJson)
-            if (Array.isArray(parsed)) {
-                setTerritories(parsed)
-            }
+            return Array.isArray(parsed) ? parsed : []
         } catch (err) {
             console.error('Fehler beim Parsen von gameStateJson:', err)
+            return []
         }
     }, [gameStateJson])
 
@@ -62,8 +56,6 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
     useEffect(() => {
         const container = svgContainerRef.current
         if (!container) return
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSvgLoaded(false)
 
         fetch(KARTE_SVG_PATH)
             .then((res) => res.text())
@@ -152,6 +144,7 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
         regions.forEach((region) => {
             const territory = territories.find((entry) => entry.territory === region.id)
             const territoryColor = territory ? getColorForOwner(territory.owner, ownerColorMap) : null
+            const isClickable = clickableRegions.length === 0 || clickableRegions.includes(region.id)
 
             region.setAttribute('fill', 'transparent')
             region.setAttribute('fill-opacity', '0')
@@ -159,18 +152,20 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
             region.setAttribute('stroke-width', '0')
             region.style.fill = 'transparent'
             region.style.fillOpacity = '0'
-            region.style.stroke = 'transparent'
+            region.style.stroke = '#f00'
             region.style.strokeWidth = '0'
             region.style.filter = 'none'
             region.style.transition = 'all 0.2s ease'
+            region.style.cursor = isClickable ? 'pointer' : 'not-allowed'
+            region.style.opacity = isClickable ? '1' : '0.4'
 
             if (territory?.owner && territoryColor) {
                 region.setAttribute('fill', territoryColor)
-                region.setAttribute('fill-opacity', '0.35')
+                region.setAttribute('fill-opacity', '0.55')
                 region.setAttribute('stroke', 'rgba(255,255,255,0.7)')
                 region.setAttribute('stroke-width', '1')
                 region.style.fill = territoryColor
-                region.style.fillOpacity = '0.35'
+                region.style.fillOpacity = '0.55'
                 region.style.stroke = 'rgba(255,255,255,0.7)'
                 region.style.strokeWidth = '1'
             }
@@ -183,13 +178,14 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                         const continentColor = getColorForOwner(continentOwner, ownerColorMap)
                         if (continentColor) {
                             region.setAttribute('stroke', continentColor)
-                            region.setAttribute('stroke-width', '4')
-                            region.setAttribute('fill-opacity', '0.45')
+                            region.setAttribute('stroke-width', '2')
+                            region.setAttribute('fill-opacity', '0.4')
                             region.style.stroke = continentColor
-                            region.style.strokeWidth = '6'
-                            region.style.fillOpacity = '0.55'
+                            region.style.strokeWidth = '2'
+                            region.style.fillOpacity = '0.4'
                             if (!region.classList.contains('continent-conquered')) {
-                                region.style.filter = `drop-shadow(0 0 6px ${continentColor}) drop-shadow(0 0 2px ${continentColor})`
+                                region.setAttribute('stroke', continentColor)
+                                region.style.stroke = continentColor
                             }
                         }
                     }
@@ -209,14 +205,16 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
 
             if (territory?.territory === selectedRegionId && territoryColor) {
                 region.setAttribute('fill', territoryColor)
-                region.setAttribute('fill-opacity', '0.55')
-                region.setAttribute('stroke', 'rgba(255,255,255,0.95)')
+                region.setAttribute('fill-opacity', '0.85')
+                region.setAttribute('stroke', territoryColor)
                 region.setAttribute('stroke-width', '3')
+                region.setAttribute('opacity', '1')
                 region.style.fill = territoryColor
-                region.style.fillOpacity = '0.55'
-                region.style.stroke = 'rgba(255,255,255,0.95)'
+                region.style.fillOpacity = '0.85'
+                region.style.opacity = '1'
+                region.style.stroke = territoryColor
                 region.style.strokeWidth = '3'
-                region.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.45))'
+
             } else if (territory?.owner && territoryColor && territory.territory === hoveredRegionId) {
                 region.setAttribute('fill', territoryColor)
                 region.setAttribute('fill-opacity', '0.75')
@@ -226,10 +224,9 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
                 region.style.fillOpacity = '0.75'
                 region.style.stroke = 'rgba(255,255,255,0.98)'
                 region.style.strokeWidth = '3'
-                region.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.6))'
             }
         })
-    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, svgLoaded])
+    }, [territories, ownerColorMap, selectedRegionId, hoveredRegionId, justConqueredTerritory, onTerritoryAnimationEnd, svgLoaded, clickableRegions])
 
     // Continent conquest pulse animation
     useEffect(() => {

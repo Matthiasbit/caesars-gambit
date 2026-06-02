@@ -1,125 +1,175 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
+import { getColorForOwner } from '@/lib/useOwnerColorMap'
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 interface DistributionDialogProps {
     isOpen: boolean
-    territoryName: string
     availableTroops: number
     onConfirm: (count: number) => void
     onCancel: () => void
     moveDialog: boolean
     attackDialog: boolean
+    moveExecuted: boolean
+    moveFrom?: string | null
+    moveTo?: string | null
+    distTo?: string | null
+    ownerColorMap: Record<string, string>
+    territories: Array<{ territory: string; owner: string | null; troops: number }>
 }
 
 export const DistributionDialog: React.FC<DistributionDialogProps> = ({
     isOpen,
-    territoryName,
     availableTroops,
     onConfirm,
     onCancel,
     moveDialog,
-    attackDialog
+    attackDialog,
+    moveExecuted,
+    moveFrom,
+    moveTo,
+    distTo,
+    ownerColorMap,
+    territories
 }) => {
     const [count, setCount] = useState(1)
+    const [lastIsOpen, setLastIsOpen] = useState(isOpen)
 
-    if (!isOpen) return null
+    if (isOpen !== lastIsOpen) {
+        setLastIsOpen(isOpen)
+        if (isOpen) setCount(1)
+    }
 
     const handleConfirm = () => {
         if (count > 0 && count <= availableTroops) {
-            setCount(1)
             onConfirm(count)
         }
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleConfirm()
-        } else if (e.key === 'Escape') {
-            onCancel()
-        }
+    const getTerritoryData = (id: string | null) => {
+        if (!id) return null
+        return territories.find(t => t.territory === id) || null
     }
 
-    return (
-        <div
-            style={{
-                position: 'fixed',
-                inset: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 3000,
-            }}
-            onClick={onCancel}
-        >
-            <div
-                className="rounded-lg border border-[rgba(59,130,246,0.25)] bg-[#0b1220] p-6 shadow-lg text-white max-w-sm"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <h2 className="text-lg font-bold mb-2">{moveDialog ?  "Truppen verschieben" : attackDialog ? "Truppen angreifen" : "Truppen verteilen"}</h2>
-                <p className="text-sm text-[rgba(189,215,255,0.85)] mb-4">
-                    Gebiet: <strong>{territoryName}</strong>
-                </p>
-                <p className="text-sm text-[rgba(189,215,255,0.85)] mb-6">
-                    Verfügbar: <strong>{availableTroops}</strong> Truppen
-                </p>
+    const sourceData = moveFrom ? getTerritoryData(moveFrom) : null
+    const targetData = moveTo ? getTerritoryData(moveTo) : (distTo ? getTerritoryData(distTo) : null)
 
-                <div className="mb-6">
-                    <label className="block text-sm font-semibold mb-2">
-                        Anzahl auswählen:
-                    </label>
-                    <div className="flex items-center gap-3">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            className="w-10"
-                            onClick={() => setCount((prev) => Math.max(1, prev - 1))}
-                        >
-                            -
-                        </Button>
-                        <input
-                            type="number"
-                            min="1"
-                            max={availableTroops}
-                            value={count}
-                            onChange={(e) => {
-                                const val = parseInt(e.target.value, 10)
-                                if (!isNaN(val) && val >= 1 && val <= availableTroops) {
-                                    setCount(val)
-                                }
-                            }}
-                            onKeyDown={handleKeyDown}
-                            className="w-20 text-center px-2 py-1 rounded bg-[rgba(15,23,42,0.85)] border border-[rgba(59,130,246,0.18)] text-white"
-                        />
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            className="w-10"
-                            onClick={() => setCount((prev) => Math.min(availableTroops, prev + 1))}
-                        >
-                            +
-                        </Button>
+    const sourceOwner = sourceData?.owner || null
+    const targetOwner = targetData?.owner || null
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+            <DialogContent className="sm:max-w-md bg-[#0b1220] border-blue-500/20 text-white p-8">
+                <DialogHeader className="mb-6">
+                    <DialogTitle className="text-2xl font-black uppercase tracking-tight mb-2 italic text-center">
+                        {moveDialog ? "TRUPPEN VERSCHIEBEN" : attackDialog ? "ANGREIFEN" : "TRUPPEN VERTEILEN"}
+                    </DialogTitle>
+                    <div className="h-1 w-12 bg-blue-600 rounded-full mx-auto" />
+                </DialogHeader>
+
+                {moveDialog && !moveExecuted && (
+                    <div className="mb-6 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-bold text-center">
+                        ⚠️ Achtung: Nach dem Verschieben kannst du in diesem Zug nicht mehr angreifen!
+                    </div>
+                )}
+
+                <div className="space-y-4 mb-8">
+                    {(attackDialog || moveDialog) && (
+                        <div className={`p-4 rounded-xl ${attackDialog ? 'bg-red-500/10 border-red-500/20' : 'bg-blue-500/10 border-blue-500/20'} border`}>
+                            <div className={`text-[10px] font-bold uppercase tracking-widest ${attackDialog ? 'text-red-400' : 'text-blue-400'} mb-2`}>
+                                {attackDialog ? 'Angriff' : 'Verschieben'}
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <div className="flex flex-col gap-1 items-center flex-1">
+                                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-tight">Von {attackDialog && `(${sourceOwner})`}</span>
+                                    <span className="font-bold text-base text-center" style={{ color: sourceOwner ? getColorForOwner(sourceOwner, ownerColorMap) : 'white' }}>
+                                        {moveFrom}
+                                    </span>
+                                </div>
+                                
+                                <div className="relative flex flex-col items-center px-4">
+                                    <div className={`${attackDialog ? 'text-red-500' : 'text-blue-500'} font-black text-xl`}>→</div>
+                                    <div className={`absolute -top-2 px-2 py-0.5 rounded-full text-[10px] font-black ${attackDialog ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'} shadow-sm`}>
+                                        {count}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-1 items-center flex-1">
+                                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-tight">{attackDialog ? 'Ziel' : 'Nach'} {attackDialog && `(${targetOwner})`}</span>
+                                    <span className="font-bold text-base text-center" style={{ color: targetOwner ? getColorForOwner(targetOwner, ownerColorMap) : 'white' }}>
+                                        {moveTo}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {!attackDialog && !moveDialog && (
+                        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2 text-center">Verteilung</div>
+                            <div className="flex flex-col gap-1 items-center">
+                                <span className="text-slate-400 text-[10px] uppercase font-bold tracking-tight">Zielgebiet ({targetOwner})</span>
+                                <span className="font-bold text-base" style={{ color: targetOwner ? getColorForOwner(targetOwner, ownerColorMap) : 'white' }}>
+                                    {distTo}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mb-8">
+                    <div className="flex justify-between items-end mb-4">
+                        <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Anzahl Truppen</label>
+                        <div className="text-3xl font-black text-blue-400">{count}</div>
+                    </div>
+                    
+                    {availableTroops > 1 ? (
+                        <div className="px-2">
+                            <Slider
+                                value={[count]}
+                                min={1}
+                                max={availableTroops}
+                                step={1}
+                                onValueChange={(vals) => setCount(vals[0])}
+                                className="py-4"
+                            />
+                        </div>
+                    ) : (
+                        <div className="px-2 py-6 text-center text-slate-500 text-xs italic">
+                            Nur eine Option verfügbar
+                        </div>
+                    )}
+                    
+                    <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-500">
+                        <span>1</span>
+                        <span className="uppercase">{availableTroops} Verfügbar</span>
                     </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3 mt-8">
                     <Button
                         variant="primary"
                         onClick={handleConfirm}
-                        disabled={count <= 0 || count > availableTroops}
-                        className="flex-1"
+                        disabled={availableTroops === 0}
+                        className="flex-1 h-12 rounded-xl border-none font-bold text-sm uppercase tracking-wider"
                     >
                         Bestätigen
                     </Button>
                     <Button
-                        variant="secondary"
+                        variant="ghost"
                         onClick={onCancel}
-                        className="flex-1"
+                        className="flex-1 h-12 rounded-xl border-none font-bold text-sm uppercase tracking-wider text-slate-400 hover:text-white"
                     >
                         Abbrechen
                     </Button>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     )
 }

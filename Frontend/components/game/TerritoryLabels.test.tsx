@@ -52,18 +52,16 @@ describe('TerritoryLabels', () => {
   it('should notify hover changes for territory labels', async () => {
     const onTerritoryHover = vi.fn()
 
-    const { container } = render(
+    render(
       <TerritoryLabels
         gameStateJson={JSON.stringify(mockGameState)}
         onTerritoryHover={onTerritoryHover}
       />
     )
 
-    await waitFor(() => expect(screen.getByText('5')).toBeInTheDocument())
-
-    const territoryGroup = container.querySelector('svg g') as SVGGElement
-    fireEvent.mouseEnter(territoryGroup)
-    fireEvent.mouseLeave(territoryGroup)
+    const palatinLabel = await screen.findByLabelText('Territory Palatin')
+    fireEvent.mouseEnter(palatinLabel)
+    fireEvent.mouseLeave(palatinLabel)
 
     await waitFor(() => {
       expect(onTerritoryHover).toHaveBeenCalledWith('Palatin')

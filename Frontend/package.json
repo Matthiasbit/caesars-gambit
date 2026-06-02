@@ -1,6 +1,6 @@
 {
   "name": "caesars-gambit",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.33.4",
   "engines": {
@@ -22,11 +22,13 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.552.0",
+    "motion": "^12.40.0",
     "next": "16.2.6",
     "radix-ui": "^1.4.3",
     "react": "19.2.0",
     "react-dice-complete": "^2.2.0",
     "react-dom": "19.2.0",
+    "react-use-measure": "^2.1.7",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
@@ -38,6 +40,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "4.1.5",
     "@vitest/ui": "^4.1.5",
     "baseline-browser-mapping": "^2.8.32",
     "eslint": "^9",

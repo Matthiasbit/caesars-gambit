@@ -215,6 +215,49 @@ class GamestateTest {
     }
 
     @Nested
+    class InitialPhase {
+
+        @Test
+        void startSetztInitialPhaseAufTrue() {
+            Player p1 = makePlayer(1L);
+            Player p2 = makePlayer(2L);
+            Gamestate gamestate = new Gamestate(room, new ArrayList<>(List.of(p1, p2)), gameController);
+
+            gamestate.start();
+
+            assertThat(gamestate.isInitialPhase()).isTrue();
+        }
+
+        @Test
+        void startGibtStartspielerExtraTruppen() {
+            Player p1 = makePlayer(1L);
+            Player p2 = makePlayer(2L);
+            Gamestate gamestate = new Gamestate(room, new ArrayList<>(List.of(p1, p2)), gameController);
+
+            gamestate.start();
+
+            Player first = gamestate.getCurrentPlayer();
+            // 40 initial - territories + reinforcements (at least 3)
+            assertThat(first.getTroopstoDist()).isGreaterThan(40 - first.getTerritories().size());
+        }
+
+        @Test
+        void checkInitialPhaseBeendetPhaseWennAlleVerteiltHaben() {
+            Player p1 = makePlayer(1L);
+            Player p2 = makePlayer(2L);
+            Gamestate gamestate = new Gamestate(room, new ArrayList<>(List.of(p1, p2)), gameController);
+            gamestate.start();
+
+            p1.setTroopstoDist(-p1.getTroopstoDist()); // set to 0
+            p2.setTroopstoDist(-p2.getTroopstoDist()); // set to 0
+
+            gamestate.checkInitialPhase();
+
+            assertThat(gamestate.isInitialPhase()).isFalse();
+        }
+    }
+
+    @Nested
     class Attack {
 
         private Player attacker;

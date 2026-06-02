@@ -60,6 +60,8 @@ public class GameController {
                 player.askDistTroops();
                 broadcastEvent(Collections.singletonList(emitter), "currentPlayer",
                         room.getGamestate().getCurrentPlayer().getUsername());
+                broadcastEvent(Collections.singletonList(emitter), "initialPhase", room.getGamestate().isInitialPhase());
+                broadcastEvent(Collections.singletonList(emitter), "gameStarted", true);
             }
         } catch (IOException e) {
             emitter.completeWithError(e);
@@ -78,6 +80,9 @@ public class GameController {
         if (player != room.getGamestate().getCurrentPlayer()) {
             throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
         }
+        if (room.getGamestate().isInitialPhase()) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot move during initial setup phase");
+        }
         Territorries from = Territorries.getTerritorryByDisplayName((String) request.get("from"));
         Territorries to = Territorries.getTerritorryByDisplayName((String) request.get("to"));
         int sum = ((Number) request.get("sum")).intValue();
@@ -88,6 +93,7 @@ public class GameController {
     @PostMapping("/attack")
     public void attack(@RequestBody Map<String, Object> request) throws InterruptedException {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
+        
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
@@ -107,12 +113,16 @@ public class GameController {
         int sum = ((Number) request.get("sum")).intValue();
         room.getGamestate().getPlayerByUserId(authService.getUserFromAuth().getId())
                 .distTroops(Territorries.getTerritorryByDisplayName(to), sum);
+        room.getGamestate().checkInitialPhase();
         room.getGamestate().sendGameStateUpdate();
     }
 
     @PostMapping("/endTurn")
     public void endTurn(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt((String) request.get("roomId")));
+        if (room.getGamestate().isInitialPhase()) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot end turn during initial setup phase");
+        }
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
