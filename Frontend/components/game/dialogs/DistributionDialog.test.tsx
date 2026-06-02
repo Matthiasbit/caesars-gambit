@@ -19,7 +19,8 @@ describe('DistributionDialog', () => {
         { territory: 'Palatin', owner: 'Player1', troops: 5 },
         { territory: 'Forum', owner: 'Player2', troops: 3 }
     ],
-    distTo: 'Palatin'
+    distTo: 'Palatin',
+    moveExecuted: false
   }
 
   beforeEach(() => {
