@@ -106,7 +106,7 @@ export function Lobby({ roomId, eventsource, router }: LobbyProps) {
 
         <aside className="w-full max-w-md mx-auto order-3 lg:order-3">
           <div className="rounded-3xl border border-blue-500/10 bg-slate-900/40 p-5 shadow-2xl backdrop-blur-md h-[400px] lg:h-[500px] flex flex-col overflow-hidden">
-            <Chat msg={eventsource.chatMessages} roomId={roomId} theme="dark" />
+            <Chat msg={eventsource.chatMessages} roomId={roomId} />
           </div>
         </aside>
 

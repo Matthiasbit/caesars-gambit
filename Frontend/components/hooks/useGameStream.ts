@@ -64,16 +64,6 @@ export function useGameStream(
 
     eventSource.onerror = async (err) => {
       console.error('SSE error:', err);
-      // EventSource doesn't expose HTTP status codes directly.
-      // We check session status manually if an error occurs to detect 403/401.
-      try {
-        const response = await fetch(`${apiBase}/api/game/current-user`, { credentials: 'include' });
-        if (response.status === 401 || response.status === 403) {
-            window.location.assign('/');
-        }
-      } catch (e) {
-        console.error('Failed to check session status:', e);
-      }
       eventSource.close();
     };
 

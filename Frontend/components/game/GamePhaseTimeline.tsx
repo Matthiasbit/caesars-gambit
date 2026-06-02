@@ -17,7 +17,6 @@ export function GamePhaseTimeline({
   const isMyTurn = eventsource.currentPlayer === currentUsername
   const isInitialPhase = eventsource.initialPhase
 
-  // Don't show timeline if game hasn't started or no current player
   if (!eventsource.gameStarted || !eventsource.currentPlayer) {
     return null
   }
@@ -45,7 +44,6 @@ export function GamePhaseTimeline({
     )
   }
 
-  // Regular game logic
   let activeIndex = 0
   if (eventsource.pendingDistCount != null && eventsource.pendingDistCount > 0) {
     activeIndex = 0

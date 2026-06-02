@@ -148,10 +148,6 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     }, [eventsource.gameStateJson, eventsource.pendingDistCount, eventsource.currentPlayer, currentUsername, regionClicked, territories, isValidHoverTarget])
 
     function showGameError(message: string) {
-        if (message.includes('403') || message.includes('401')) {
-            window.location.assign('/');
-            return;
-        }
         setGameError(message)
     }
 
@@ -360,7 +356,6 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                 <div
                     className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 p-4 lg:p-8 w-full max-w-[1600px] mx-auto"
                 >
-                    {/* Sidebar: Players & Timeline */}
                     <div className="flex flex-col gap-6 order-1 lg:order-1 h-fit">
                         <div className="rounded-3xl border border-blue-500/10 bg-slate-900/40 p-6 shadow-2xl backdrop-blur-md">
                             <h2 className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mb-6">Spieler</h2>
@@ -382,21 +377,16 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 )}
                             </div>
                         </div>
-
                         <GamePhaseTimeline
                             eventsource={eventsource}
                             currentUsername={currentUsername}
                             moveExecuted={moveExecuted}
                             onEndTurn={handleEndTurn}
                         />
-
-                        {/* Chat on desktop sidebar */}
                         <div className="hidden lg:flex flex-col rounded-3xl border border-blue-500/10 bg-slate-900/40 p-5 shadow-2xl backdrop-blur-md h-[400px]">
-                            <Chat msg={eventsource.chatMessages} roomId={roomId} theme="dark" />
+                            <Chat msg={eventsource.chatMessages} roomId={roomId} />
                         </div>
                     </div>
-
-                    {/* Main Content: Map */}
                     <div className="order-2 lg:order-2 flex flex-col gap-6 w-full min-w-0">
                         <div className="relative rounded-3xl border border-blue-500/10 bg-black/40 overflow-hidden shadow-2xl backdrop-blur-sm aspect-[4/3] lg:aspect-auto">
                             <GameCard
@@ -424,10 +414,8 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
                                 onClose={() => { setShowAttackDice(false); setAttackRollResult(null) }}
                             />
                         </div>
-
-                        {/* Chat on mobile below map */}
                         <div className="flex lg:hidden flex-col rounded-3xl border border-blue-500/10 bg-slate-900/40 p-5 shadow-2xl backdrop-blur-md h-[350px] order-3">
-                            <Chat msg={eventsource.chatMessages} roomId={roomId} theme="dark" />
+                            <Chat msg={eventsource.chatMessages} roomId={roomId}  />
                         </div>
                     </div>
                 </div>

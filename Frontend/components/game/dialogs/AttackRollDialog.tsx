@@ -11,7 +11,6 @@ import {
 import Button from '@/components/ui/button'
 import dynamic from 'next/dynamic'
 
-// Dynamically import ReactDice to avoid "self is not defined" SSR error
 const ReactDice = dynamic(() => import('react-dice-complete').then(mod => mod.default), {
     ssr: false,
 })
@@ -72,9 +71,9 @@ export function AttackRollDialog({
         const tryRoll = () => {
             const totalDiceNeeded = attackRollResult.attackerDice.length + attackRollResult.defenderDice.length
             let allReady = true
-            
+
             for (let i = 0; i < totalDiceNeeded; i++) {
-                if (!(diceRefs as React.MutableRefObject<Array<unknown | null>>).current[i]) {
+                if (!(diceRefs as React.RefObject<Array<unknown | null>>).current[i]) {
                     allReady = false
                     break
                 }
@@ -82,12 +81,12 @@ export function AttackRollDialog({
 
             if (allReady) {
                 attackRollResult.attackerDice.forEach((value, index) => {
-                    const diceRef = (diceRefs as React.MutableRefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[index]
+                    const diceRef = (diceRefs as React.RefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[index]
                     diceRef?.rollAll([value])
                 })
 
                 attackRollResult.defenderDice.forEach((value, index) => {
-                    const diceRef = (diceRefs as React.MutableRefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[attackerDiceCount + index]
+                    const diceRef = (diceRefs as React.RefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[attackerDiceCount + index]
                     diceRef?.rollAll([value])
                 })
             } else {
@@ -107,7 +106,7 @@ export function AttackRollDialog({
     useEffect(() => {
         if (showAttackDice) {
             const timer = setTimeout(() => {
-                    setShowResults(true)
+                setShowResults(true)
             }, 2500)
             return () => clearTimeout(timer)
         }
@@ -119,12 +118,6 @@ export function AttackRollDialog({
 
     const initialAttackerTroops = attackerTerritoryData?.troops ?? 0
     const initialDefenderTroops = defenderTerritoryData?.troops ?? 0
-
-    const attackerTroopsAfter = initialAttackerTroops - (attackRollResult.lostTroopsAttack || 0)
-    // On victory, the remaining attacking troops move to the new territory.
-    const defenderTroopsAfter = isVictory 
-        ? (totalAttackingTroops - (attackRollResult.lostTroopsAttack || 0)) 
-        : (initialDefenderTroops - (attackRollResult.lostTroopsDefense || 0))
 
     const currentDefenderOwner = (showResults && isVictory) ? attackerTerritoryData?.owner : defenderTerritoryData?.owner
     const currentDefenderAccent = (showResults && isVictory) ? attackerAccent : initialDefenderAccent
@@ -148,37 +141,39 @@ export function AttackRollDialog({
                             {attackRollResult.territoryFrom}
                         </div>
                         <div className="text-xl font-black h-7">
-                            <SlidingNumber 
-                                number={showResults ? attackerTroopsAfter : initialAttackerTroops} 
+                            <SlidingNumber
+                                number={showResults ? (initialAttackerTroops - (attackRollResult.lostTroopsAttack || 0)) : initialAttackerTroops}
                                 fromNumber={showResults ? initialAttackerTroops : undefined}
                                 initiallyStable={true}
                             />
                         </div>
                     </div>
-                    
+
                     <div className={`flex flex-col items-center gap-1 transition-all duration-500 ${showResults && isVictory ? 'scale-110' : ''}`}>
                         <div className={`text-3xl font-black ${showResults && isVictory ? 'text-green-500' : 'text-blue-500 animate-pulse'}`}>
                             {showResults && isVictory ? '🏆' : 'VS'}
                         </div>
                         <div className="text-[8px] font-bold text-slate-500 uppercase text-center mt-1">
-                           Angriff mit<br/>
-                           <span className="text-blue-400 text-xs">{totalAttackingTroops} Truppen</span>
+                            Angriff mit<br />
+                            <span className="text-blue-400 text-xs">{totalAttackingTroops} Truppen</span>
                         </div>
                     </div>
-                    
+
                     <div className="flex flex-col items-center gap-2 flex-1">
                         <div className="text-[9px] font-black uppercase tracking-tight text-slate-500" style={{ color: currentDefenderAccent }}>
                             Verteidiger ({currentDefenderOwner})
                         </div>
                         <div
-                            className={`px-4 py-2 rounded-lg font-black text-white text-sm shadow-lg border transition-all duration-1000 w-full text-center truncate ${ (showResults && isVictory) ? 'border-green-500/50 animate-pulse' : 'border-white/5'}`}
+                            className={`px-4 py-2 rounded-lg font-black text-white text-sm shadow-lg border transition-all duration-1000 w-full text-center truncate ${(showResults && isVictory) ? 'border-green-500/50 animate-pulse' : 'border-white/5'}`}
                             style={{ backgroundColor: currentDefenderAccent }}
                         >
                             {attackRollResult.territoryTo}
                         </div>
                         <div className="text-xl font-black h-7">
-                            <SlidingNumber 
-                                number={showResults ? defenderTroopsAfter : initialDefenderTroops} 
+                            <SlidingNumber
+                                number={showResults ? (isVictory
+                                    ? (totalAttackingTroops - (attackRollResult.lostTroopsAttack || 0))
+                                    : (initialDefenderTroops - (attackRollResult.lostTroopsDefense || 0))) : initialDefenderTroops}
                                 fromNumber={showResults ? initialDefenderTroops : undefined}
                                 initiallyStable={true}
                             />
@@ -189,8 +184,8 @@ export function AttackRollDialog({
                 {showResults && (
                     <div className="text-center mb-6 animate-in fade-in zoom-in duration-500">
                         <div className={`text-sm font-black italic uppercase tracking-tighter ${isVictory ? 'text-green-400' : 'text-orange-400'}`}>
-                            {isVictory 
-                                ? `${attackerTerritoryData?.owner} hat das Gebiet erobert!` 
+                            {isVictory
+                                ? `${attackerTerritoryData?.owner} hat das Gebiet erobert!`
                                 : `Angriff abgewehrt! ${defenderTerritoryData?.owner} hält die Stellung.`}
                         </div>
                     </div>
@@ -246,8 +241,8 @@ export function AttackRollDialog({
 
                 {showResults && (
                     <div className="flex justify-center border-t border-white/5 pt-6">
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             onClick={onClose}
                             className="w-auto px-10 text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20"
                         >

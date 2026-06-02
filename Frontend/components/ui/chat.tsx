@@ -7,10 +7,10 @@ import Button from "./button";
 type ChatProps = {
   msg: { username: string; message: string }[];
   roomId?: string | number;
-  theme?: 'light' | 'dark';
+  isDark?: boolean;
 };
 
-export function Chat({ msg, roomId, theme = 'dark' }: ChatProps) {
+export function Chat({ msg, roomId, isDark = true}: ChatProps) {
   const [messageInput, setMessageInput] = useState<string>("");
   const listRef = useRef<HTMLDivElement | null>(null);
   const numericRoomId = typeof roomId === "string" ? Number(roomId) : (roomId as number | undefined);
@@ -33,8 +33,6 @@ export function Chat({ msg, roomId, theme = 'dark' }: ChatProps) {
       console.error("Failed to send message", err);
     }
   };
-
-  const isDark = theme === 'dark';
 
   if (currentUser.isPending) {
     return (

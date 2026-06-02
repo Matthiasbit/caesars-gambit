@@ -7,8 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.risiko.contoller.GameController;
+import com.risiko.exception.AppException;
 import com.risiko.model.dto.AttackResultDto;
 import com.risiko.model.dto.ContinentConquered;
 import com.risiko.model.dto.TerritoryStateDto;
@@ -146,6 +149,9 @@ public class Gamestate {
         }
         if (players.stream().anyMatch(p -> p.getTroopstoDist() > 0)) {
             throw new IllegalArgumentException("Ein Spieler hat noch Truppen zu verteilen. Alle Spieler müssen ihre Truppen verteilen, bevor ein Angriff möglich ist.");
+        }
+        if (initialPhase) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot attack during initial setup phase");
         }
 
         List<Integer> attackerRolls = null;

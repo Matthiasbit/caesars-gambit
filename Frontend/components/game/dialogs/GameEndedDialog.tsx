@@ -36,10 +36,10 @@ export function GameEndedDialog({ winner, ownerColorMap, roomId }: GameEndedDial
                     )}
                 </p>
                 <button
-                    onClick={() => router.push(`/`)}
+                    onClick={() => router.push(`/room/${roomId}`)}
                     className="px-8 py-3 bg-[rgba(255,210,60,0.15)] border border-[rgba(255,210,60,0.6)] rounded-xl text-[rgba(255,210,60,0.95)] font-bold text-lg hover:bg-[rgba(255,210,60,0.25)] transition-colors"
                 >
-                    Zurück zur Startseite
+                    Zurück zur Lobby
                 </button>
             </DialogContent>
         </Dialog>

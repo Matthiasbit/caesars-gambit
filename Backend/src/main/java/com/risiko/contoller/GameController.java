@@ -73,15 +73,15 @@ public class GameController {
     @PostMapping("/move")
     public void move(@RequestBody Map<String, Object> request) {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
-        if (room.getGamestate().isInitialPhase()) {
-            throw new AppException(HttpStatus.CONFLICT, "Cannot move during initial setup phase");
-        }
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Player not found in room"));
         if (player != room.getGamestate().getCurrentPlayer()) {
             throw new AppException(HttpStatus.CONFLICT, "It's not the current player's turn");
+        }
+        if (room.getGamestate().isInitialPhase()) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot move during initial setup phase");
         }
         Territorries from = Territorries.getTerritorryByDisplayName((String) request.get("from"));
         Territorries to = Territorries.getTerritorryByDisplayName((String) request.get("to"));
@@ -93,9 +93,7 @@ public class GameController {
     @PostMapping("/attack")
     public void attack(@RequestBody Map<String, Object> request) throws InterruptedException {
         Room room = roomService.getRoomById(Integer.parseInt(request.get("roomId").toString()));
-        if (room.getGamestate().isInitialPhase()) {
-            throw new AppException(HttpStatus.CONFLICT, "Cannot attack during initial setup phase");
-        }
+        
         Player player = room.getPlayers().stream()
                 .filter(p -> authService.getUserFromAuth().getId() == p.getUserId())
                 .findFirst()
