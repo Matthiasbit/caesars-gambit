@@ -220,6 +220,8 @@ public enum Territorries {
         connect(SILBER_BUCHT, VARENSIA);
         connect(SZULIONEN, TREVOIA);
         connect(TOSCANA_UND_UNBURIA, VARENSIA);
+        connect(TENUBRA, EICHENWALD);
+        connect(PALERNO, HAIRON);
     }
 
     public String getDisplayName() {
