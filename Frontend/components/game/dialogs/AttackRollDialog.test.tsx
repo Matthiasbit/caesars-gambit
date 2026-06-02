@@ -36,6 +36,7 @@ describe('AttackRollDialog', () => {
     lostTroopsAttack: 1,
     lostTroopsDefense: 2,
     territoryWon: true,
+    attackerTroopsCount: 5,
   }
 
   beforeEach(() => {

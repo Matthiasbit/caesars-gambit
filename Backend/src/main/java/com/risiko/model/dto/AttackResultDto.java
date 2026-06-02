@@ -10,10 +10,12 @@ public class AttackResultDto {
     private String territoryFrom;
     private String territoryTo;
     private boolean territoryWon;
+    private int attackerTroopsCount;
 
     public AttackResultDto(List<Integer> attackerDice, List<Integer> defenderDice, 
                            int lostTroopsAttack, int lostTroopsDefense, 
-                           String territoryFrom, String territoryTo, boolean territoryWon) {
+                           String territoryFrom, String territoryTo, boolean territoryWon,
+                           int attackerTroopsCount) {
         this.attackerDice = attackerDice;
         this.defenderDice = defenderDice;
         this.lostTroopsAttack = lostTroopsAttack;
@@ -21,6 +23,7 @@ public class AttackResultDto {
         this.territoryFrom = territoryFrom;
         this.territoryTo = territoryTo;
         this.territoryWon = territoryWon;
+        this.attackerTroopsCount = attackerTroopsCount;
     }
 
     public List<Integer> getAttackerDice() {
@@ -77,5 +80,13 @@ public class AttackResultDto {
 
     public void setTerritoryWon(boolean territoryWon) {
         this.territoryWon = territoryWon;
+    }
+
+    public int getAttackerTroopsCount() {
+        return attackerTroopsCount;
+    }
+
+    public void setAttackerTroopsCount(int attackerTroopsCount) {
+        this.attackerTroopsCount = attackerTroopsCount;
     }
 }

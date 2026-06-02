@@ -10,6 +10,7 @@ export type AttackResult = {
   territoryFrom: string;
   territoryTo: string;
   territoryWon: boolean;
+  attackerTroopsCount: number;
 };
 
 export type EventsourceTypes = {

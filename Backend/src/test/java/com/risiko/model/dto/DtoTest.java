@@ -13,7 +13,7 @@ class DtoTest {
         AttackResultDto dto = new AttackResultDto(
                 List.of(6, 5), List.of(3, 2),
                 1, 2,
-                "Palatin", "Laterano", true);
+                "Palatin", "Laterano", true, 5);
 
         assertThat(dto.getAttackerDice()).containsExactly(6, 5);
         assertThat(dto.getDefenderDice()).containsExactly(3, 2);
@@ -22,6 +22,7 @@ class DtoTest {
         assertThat(dto.getTerritoryFrom()).isEqualTo("Palatin");
         assertThat(dto.getTerritoryTo()).isEqualTo("Laterano");
         assertThat(dto.isTerritoryWon()).isTrue();
+        assertThat(dto.getAttackerTroopsCount()).isEqualTo(5);
 
         dto.setAttackerDice(List.of(4));
         dto.setDefenderDice(List.of(2));
@@ -30,6 +31,7 @@ class DtoTest {
         dto.setTerritoryFrom("A");
         dto.setTerritoryTo("B");
         dto.setTerritoryWon(false);
+        dto.setAttackerTroopsCount(3);
 
         assertThat(dto.getAttackerDice()).containsExactly(4);
         assertThat(dto.getDefenderDice()).containsExactly(2);
@@ -38,6 +40,7 @@ class DtoTest {
         assertThat(dto.getTerritoryFrom()).isEqualTo("A");
         assertThat(dto.getTerritoryTo()).isEqualTo("B");
         assertThat(dto.isTerritoryWon()).isFalse();
+        assertThat(dto.getAttackerTroopsCount()).isEqualTo(3);
     }
 
     @Test

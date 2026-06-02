@@ -69,7 +69,7 @@ describe('useGameStream', () => {
     
     const attackResultCallback = vi.mocked(mockEventSource.addEventListener).mock.calls.find(call => call[0] === 'attackResult')?.[1] as (event: { data: string }) => void
     
-    const attackData = { territoryFrom: 'A', territoryTo: 'B', attackerDice: [6], defenderDice: [1], lostTroopsAttack: 0, lostTroopsDefense: 1, territoryWon: true }
+    const attackData = { territoryFrom: 'A', territoryTo: 'B', attackerDice: [6], defenderDice: [1], lostTroopsAttack: 0, lostTroopsDefense: 1, territoryWon: true, attackerTroopsCount: 1 }
     
     act(() => {
       attackResultCallback({ data: JSON.stringify(attackData) })

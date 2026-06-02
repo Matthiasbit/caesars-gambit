@@ -52,6 +52,7 @@ export function AttackRollDialog({
     }
 
     const attackerDiceCount = attackRollResult?.attackerDice.length ?? 0
+    const totalAttackingTroops = attackRollResult?.attackerTroopsCount ?? 0
 
     const attackerTerritoryData = attackRollResult
         ? territories.find((territory) => territory.territory.trim() === attackRollResult.territoryFrom.trim())
@@ -66,17 +67,35 @@ export function AttackRollDialog({
     useEffect(() => {
         if (!showAttackDice || !attackRollResult) return
 
-        const timer = setTimeout(() => {
-            attackRollResult.attackerDice.forEach((value, index) => {
-                const diceRef = (diceRefs as React.MutableRefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[index]
-                diceRef?.rollAll([value])
-            })
+        let timer: NodeJS.Timeout
 
-            attackRollResult.defenderDice.forEach((value, index) => {
-                const diceRef = (diceRefs as React.MutableRefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[attackerDiceCount + index]
-                diceRef?.rollAll([value])
-            })
-        }, 300)
+        const tryRoll = () => {
+            const totalDiceNeeded = attackRollResult.attackerDice.length + attackRollResult.defenderDice.length
+            let allReady = true
+            
+            for (let i = 0; i < totalDiceNeeded; i++) {
+                if (!(diceRefs as React.MutableRefObject<Array<unknown | null>>).current[i]) {
+                    allReady = false
+                    break
+                }
+            }
+
+            if (allReady) {
+                attackRollResult.attackerDice.forEach((value, index) => {
+                    const diceRef = (diceRefs as React.MutableRefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[index]
+                    diceRef?.rollAll([value])
+                })
+
+                attackRollResult.defenderDice.forEach((value, index) => {
+                    const diceRef = (diceRefs as React.MutableRefObject<Array<{ rollAll: (vals: number[]) => void } | null>>).current[attackerDiceCount + index]
+                    diceRef?.rollAll([value])
+                })
+            } else {
+                timer = setTimeout(tryRoll, 50)
+            }
+        }
+
+        timer = setTimeout(tryRoll, 50)
 
         return () => clearTimeout(timer)
     }, [attackRollResult, attackerDiceCount, diceRefs, attackRollSequence, showAttackDice])
@@ -104,7 +123,7 @@ export function AttackRollDialog({
     const attackerTroopsAfter = initialAttackerTroops - (attackRollResult.lostTroopsAttack || 0)
     // On victory, the remaining attacking troops move to the new territory.
     const defenderTroopsAfter = isVictory 
-        ? (attackerDiceCount - (attackRollResult.lostTroopsAttack || 0)) 
+        ? (totalAttackingTroops - (attackRollResult.lostTroopsAttack || 0)) 
         : (initialDefenderTroops - (attackRollResult.lostTroopsDefense || 0))
 
     const currentDefenderOwner = (showResults && isVictory) ? attackerTerritoryData?.owner : defenderTerritoryData?.owner
@@ -143,7 +162,7 @@ export function AttackRollDialog({
                         </div>
                         <div className="text-[8px] font-bold text-slate-500 uppercase text-center mt-1">
                            Angriff mit<br/>
-                           <span className="text-blue-400 text-xs">{attackerDiceCount} Truppen</span>
+                           <span className="text-blue-400 text-xs">{totalAttackingTroops} Truppen</span>
                         </div>
                     </div>
                     

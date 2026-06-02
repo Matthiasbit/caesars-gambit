@@ -190,7 +190,8 @@ public class Gamestate {
                 lostTroopsDefence,
                 fromTerritory.getDisplayName(),
                 toTerritory.getDisplayName(),
-                territoryWon);
+                territoryWon,
+                sum);
 
         List<SseEmitter> emitters = players.stream()
                 .map(pl -> pl.emitter)
