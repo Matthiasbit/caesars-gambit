@@ -44,6 +44,12 @@ export function AttackRollDialog({
     onClose,
 }: AttackRollDialogProps) {
     const [showResults, setShowResults] = useState(false)
+    const [lastSequence, setLastSequence] = useState(attackRollSequence)
+
+    if (attackRollSequence !== lastSequence) {
+        setLastSequence(attackRollSequence)
+        setShowResults(false)
+    }
 
     const attackerDiceCount = attackRollResult?.attackerDice.length ?? 0
 
@@ -56,13 +62,6 @@ export function AttackRollDialog({
 
     const attackerAccent = getColorForOwner(attackerTerritoryData?.owner ?? null, ownerColorMap)
     const initialDefenderAccent = getColorForOwner(defenderTerritoryData?.owner ?? null, ownerColorMap)
-
-    useEffect(() => {
-        if (showAttackDice && attackRollResult) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setShowResults(false)
-        }
-    }, [showAttackDice, attackRollResult])
 
     useEffect(() => {
         if (!showAttackDice || !attackRollResult) return
@@ -89,8 +88,7 @@ export function AttackRollDialog({
     useEffect(() => {
         if (showAttackDice) {
             const timer = setTimeout(() => {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setShowResults(true)
+                    setShowResults(true)
             }, 2500)
             return () => clearTimeout(timer)
         }

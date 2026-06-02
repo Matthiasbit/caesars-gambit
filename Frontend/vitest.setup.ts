@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
+import React from 'react'
 
 if (!global.fetch) {
   global.fetch = vi.fn()
@@ -12,7 +13,7 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
-global.ResizeObserver = ResizeObserverMock
+global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
 
 class IntersectionObserverMock {
   observe() {}
@@ -20,16 +21,15 @@ class IntersectionObserverMock {
   disconnect() {}
 }
 
-global.IntersectionObserver = IntersectionObserverMock
+global.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver
 
 vi.mock('next/dynamic', () => ({
-  default: (loader: any) => {
-    const React = require('react')
-    let Component: any = null
-    loader().then((mod: any) => {
-      Component = mod.default || mod
+  default: (loader: () => Promise<React.ComponentType | { default: React.ComponentType }>) => {
+    let Component: React.ComponentType | null = null
+    loader().then((mod) => {
+      Component = 'default' in mod ? mod.default : mod
     })
-    return (props: any) => {
+    return (props: Record<string, unknown>) => {
       if (!Component) return null
       return React.createElement(Component, props)
     }

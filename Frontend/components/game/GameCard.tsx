@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import styles from './GameCard.module.css'
 import { TerritoryLabels } from './TerritoryLabels'
@@ -31,24 +31,17 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
     const svgContainerRef = useRef<HTMLDivElement | null>(null)
     const onRegionClickRef = useRef(onRegionClick)
     const onRegionHoverRef = useRef(onRegionHover)
-    const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [svgLoaded, setSvgLoaded] = useState(false)
     const ownerColorMap = useOwnerColorMap(playerNames)
 
-    useEffect(() => {
-        if (!gameStateJson) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setTerritories([])
-            return
-        }
-
+    const territories = useMemo<TerritoryData[]>(() => {
+        if (!gameStateJson) return []
         try {
             const parsed = JSON.parse(gameStateJson)
-            if (Array.isArray(parsed)) {
-                setTerritories(parsed)
-            }
+            return Array.isArray(parsed) ? parsed : []
         } catch (err) {
             console.error('Fehler beim Parsen von gameStateJson:', err)
+            return []
         }
     }, [gameStateJson])
 
@@ -63,8 +56,6 @@ export default function GameCard({ onRegionClick, onRegionHover, gameStateJson, 
     useEffect(() => {
         const container = svgContainerRef.current
         if (!container) return
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSvgLoaded(false)
 
         fetch(KARTE_SVG_PATH)
             .then((res) => res.text())

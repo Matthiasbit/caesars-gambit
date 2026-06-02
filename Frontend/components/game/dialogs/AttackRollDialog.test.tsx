@@ -5,16 +5,19 @@ import { AttackRollDialog } from './AttackRollDialog'
 import React from 'react'
 
 // Mock react-dice-complete
-vi.mock('react-dice-complete', () => ({
-  default: ({ ref }: any) => {
+vi.mock('react-dice-complete', () => {
+  const MockDice = ({ ref }: { ref: React.Ref<unknown> }) => {
     React.useEffect(() => {
       if (typeof ref === 'function') {
         ref({ rollAll: vi.fn() })
       }
     }, [ref])
     return <div data-testid="react-dice" />
-  },
-}))
+  }
+  return {
+    default: MockDice,
+  }
+})
 
 describe('AttackRollDialog', () => {
   const mockOnClose = vi.fn()

@@ -7,7 +7,6 @@ import Button from "@/components/ui/button";
 import { createRoom } from "@/components/api/createRoom";
 import { joinRoom } from "@/components/api/joinRoom";
 import signOut from "@/lib/auth";
-import { Github } from "lucide-react";
 import { useGetCurrentUser } from "@/components/api/getCurrentUser";
 import { Spinner } from "@/components/ui/spinner";
 import { parseInviteRoomId } from "@/lib/invite";

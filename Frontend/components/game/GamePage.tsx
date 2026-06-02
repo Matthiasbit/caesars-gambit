@@ -1,6 +1,6 @@
 import GameCard from './GameCard'
 import { Chat } from '../ui/chat'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DistributionDialog } from './dialogs/DistributionDialog'
 import { GameEndedDialog } from './dialogs/GameEndedDialog'
 import { ContinentConqueredDialog } from './dialogs/ContinentConqueredDialog'
@@ -35,7 +35,6 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null)
     const [justConqueredTerritory, setJustConqueredTerritory] = useState<string | null>(null)
     const [dialogTerritory, setDialogTerritory] = useState<string | null>(null);
-    const [territories, setTerritories] = useState<TerritoryData[]>([])
     const [moveDialog, setMoveDialog] = useState(false)
     const [moveTroopsCount, setMoveTroopsCount] = useState<number | null>(null)
     const [moveFrom, setMoveFrom] = useState<string | null>(null)
@@ -44,7 +43,7 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const [gameError, setGameError] = useState<string | null>(null)
     const ownerColorMap = useOwnerColorMap(eventsource.playerNames)
     const currentUser = useGetCurrentUser()
-    const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+    const currentUsername = currentUser.data?.username ?? null
     const [attackRollResult, setAttackRollResult] = useState<AttackResult | null>(null)
     const [showAttackDice, setShowAttackDice] = useState(false)
     const [attackRollSequence, setAttackRollSequence] = useState(0)
@@ -53,6 +52,17 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
     const attackDiceRefs = useRef<Array<ReactDiceRef | null>>([])
     const attackRollTotalRef = useRef(0)
     const attackRollCountRef = useRef(0)
+
+    const territories = useMemo<TerritoryData[]>(() => {
+        if (!eventsource.gameStateJson) return []
+        try {
+            const parsed = JSON.parse(eventsource.gameStateJson)
+            return Array.isArray(parsed) ? parsed : []
+        } catch (err) {
+            console.error('Fehler beim Parsen von gameStateJson:', err)
+            return []
+        }
+    }, [eventsource.gameStateJson])
 
     const territoryOwnedByCurrentUser = useCallback((territoryId: string): boolean => {
         const territory = territories.find((t) => t.territory === territoryId)
@@ -76,35 +86,31 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         return isAdjacent(regionClicked, regionId)
     }, [regionClicked, territories, currentUsername, territoryOwnedByCurrentUser])
 
-    useEffect(() => {
-        if (currentUser.isSuccess && currentUser.data) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCurrentUsername(currentUser.data.username);
+    const [lastAttackResult, setLastAttackResult] = useState<AttackResult | null>(null)
+
+    if (eventsource.attackResult !== lastAttackResult) {
+        setLastAttackResult(eventsource.attackResult)
+
+        if (!eventsource.attackResult) {
+            setAttackRollResult(null)
+            setShowAttackDice(false)
+        } else {
+            const result = eventsource.attackResult
+            setAttackRollResult(result)
+            setShowAttackDice(true)
+            setAttackRollSequence((prev) => prev + 1)
         }
-    }, [currentUser]);
+    }
 
     useEffect(() => {
         attackDiceRefs.current = []
         attackRollCountRef.current = 0
-
-        if (!eventsource.attackResult) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setAttackRollResult(null)
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setShowAttackDice(false)
+        if (eventsource.attackResult) {
+            attackRollTotalRef.current = eventsource.attackResult.attackerDice.length + eventsource.attackResult.defenderDice.length
+        } else {
             attackRollTotalRef.current = 0
-            return
         }
-
-        const result = eventsource.attackResult
-        attackRollTotalRef.current = result.attackerDice.length + result.defenderDice.length
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setAttackRollResult(result)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setShowAttackDice(true)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setAttackRollSequence((prev) => prev + 1)
-    }, [eventsource.attackResult]);
+    }, [eventsource.attackResult])
 
     const handleAttackDieRoll = () => {
         attackRollCountRef.current += 1
@@ -121,46 +127,23 @@ export default function GamePage({ roomId, eventsource }: GamePageProps) {
         }
     }
 
-    useEffect(() => {
-        if (!eventsource.gameStateJson) return
-        try {
-            const parsed = JSON.parse(eventsource.gameStateJson)
-            if (Array.isArray(parsed)) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setTerritories(parsed)
-            }
-        } catch (err) {
-            console.error('Fehler beim Parsen von gameStateJson:', err)
-        }
-    }, [eventsource.gameStateJson])
-
-    const [clickableRegions, setClickableRegions] = useState<string[]>([])
-
-    useEffect(() => {
+    const clickableRegions = useMemo<string[]>(() => {
         if (!eventsource.gameStateJson) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setClickableRegions([])
-            return
+            return []
         }
 
         if (eventsource.pendingDistCount && eventsource.pendingDistCount > 0) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setClickableRegions(territories.filter(t => t.owner === currentUsername).map(t => t.territory))
-            return
+            return territories.filter(t => t.owner === currentUsername).map(t => t.territory)
         }
 
         if (eventsource.currentPlayer !== currentUsername) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setClickableRegions([])
-            return
+            return []
         }
 
         if (!regionClicked) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setClickableRegions(territories.filter(t => t.owner === currentUsername && t.troops >= 2).map(t => t.territory))
+            return territories.filter(t => t.owner === currentUsername && t.troops >= 2).map(t => t.territory)
         } else {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setClickableRegions(territories.filter(t => isValidHoverTarget(t.territory)).map(t => t.territory))
+            return territories.filter(t => isValidHoverTarget(t.territory)).map(t => t.territory)
         }
     }, [eventsource.gameStateJson, eventsource.pendingDistCount, eventsource.currentPlayer, currentUsername, regionClicked, territories, isValidHoverTarget])
 

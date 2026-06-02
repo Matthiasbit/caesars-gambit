@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Button from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { getColorForOwner } from '@/lib/useOwnerColorMap'
@@ -39,13 +39,12 @@ export const DistributionDialog: React.FC<DistributionDialogProps> = ({
     territories
 }) => {
     const [count, setCount] = useState(1)
+    const [lastIsOpen, setLastIsOpen] = useState(isOpen)
 
-    useEffect(() => {
-        if (isOpen) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCount(1)
-        }
-    }, [isOpen])
+    if (isOpen !== lastIsOpen) {
+        setLastIsOpen(isOpen)
+        if (isOpen) setCount(1)
+    }
 
     const handleConfirm = () => {
         if (count > 0 && count <= availableTroops) {

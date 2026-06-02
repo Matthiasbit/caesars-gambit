@@ -49,8 +49,8 @@ export function Lobby({ roomId, eventsource, router }: LobbyProps) {
   return <div className="min-h-dvh flex items-center justify-center text-white p-4">
     <div className="w-full max-w-6xl relative z-10">
       <div className="mb-8 text-center mt-4 lg:mt-0">
-        <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-blue-200 to-blue-500 bg-clip-text text-transparent italic uppercase drop-shadow-sm">Risiko online</h1>
-        <p className="text-[10px] text-blue-400/50 mt-1 font-black tracking-[0.2em] uppercase">Operationszentrum #{roomId}</p>
+        <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-blue-200 to-blue-500 bg-clip-text text-transparent italic uppercase drop-shadow-sm">Lobby</h1>
+        <p className="text-[10px] text-blue-400/50 mt-1 font-black tracking-[0.2em] uppercase">Room #{roomId}</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 items-stretch">
 
@@ -86,7 +86,7 @@ export function Lobby({ roomId, eventsource, router }: LobbyProps) {
                 disabled={eventsource.playerNames.length < 2} 
                 onClick={async () => { await startGame(Number(roomId)); eventsource.setGameStarted(true) }}
             >
-              Feldzug Starten
+              Spiel Starten
             </Button>
 
             <Button 

@@ -2,18 +2,12 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Item } from "@/components/ui/item";
 import { SquareArrowOutUpRight } from "lucide-react";
 import { AUTH_LOGIN_REASONS, getAuthLoginMessage } from "@/lib/authMessages";
 import { normalizeInternalRedirect } from "@/lib/invite";
-
-import packageJson from "@/package.json";
-
-const APP_VERSION = packageJson.version;
 
 function LoginForm() {
   const [email, setEmail] = useState("");
