@@ -19,10 +19,10 @@ describe('GameEndedDialog', () => {
     const { push } = useRouter()
     render(<GameEndedDialog winner="Winner" ownerColorMap={ownerColorMap} roomId={roomId} />)
     
-    const button = screen.getByRole('button', { name: /Zurück zur Startseite/i })
+    const button = screen.getByRole('button', { name: /Zurück zur Lobby/i })
     fireEvent.click(button)
     
-    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledWith(`/room/${roomId}`)
   })
 
   it('should not render content when winner is null', () => {
